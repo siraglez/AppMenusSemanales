@@ -11,7 +11,7 @@ import SwiftData
 
 class MenuGenerator {
     // Función principal: Genera un menú aleatorio
-    static func generateWeekMenu(recipes: [Recipe], season: Season = .all) -> [WeeklyMeny] {
+    static func generateWeekMenu(recipes: [Recipe], season: Season = .all) -> [WeeklyMenu] {
         var menu: [WeeklyMenu] = []
         let days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
         
