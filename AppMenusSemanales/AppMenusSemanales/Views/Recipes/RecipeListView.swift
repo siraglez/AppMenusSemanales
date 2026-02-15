@@ -31,7 +31,7 @@ struct RecipeListView: View {
                                 Text(recipe.season.rawValue)
                                     .font(.caption)
                                     .padding(5)
-                                    .background(Color.blue.opacity(0.1))
+                                    .background(Color.orange.opacity(0.1))
                             }
                         }
                     }
