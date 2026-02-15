@@ -19,8 +19,10 @@ struct ProfileView: View {
                     Form {
                         if let user = users.first {
                             Section("Mis Datos") {
-                                Text(user.name)
-                                Text(user.email).foregroundStyle(.secondary)
+                                Text("\(user.name) \(user.surname)")
+                                    .font(.headline)
+                                Text(user.email)
+                                    .foregroundStyle(.secondary)
                                 Text("Miembro desde: \(user.registerDate.formatted(date: .abbreviated, time: .omitted))")
                             }
                             

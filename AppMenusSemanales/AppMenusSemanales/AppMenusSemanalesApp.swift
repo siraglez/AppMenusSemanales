@@ -11,11 +11,17 @@ import SwiftData
 
 @main
 struct AppMenusSemanalesApp: App {
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if isLoggedIn {
+                ContentView()
+            } else {
+                LoginView()
+            }
         }
         // Crear el archivo de base de datos automáticamente
-        .modelContainer(for: [Recipe.self, UserProfile.self])
+        .modelContainer(for: [Recipe.self, UserProfile.self, WeeklyMenu.self])
     }
 }
