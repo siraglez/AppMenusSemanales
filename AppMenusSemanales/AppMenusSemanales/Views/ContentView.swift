@@ -28,12 +28,19 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            // Pestaña 3: Perfil
+            // Pestaña 3: Lista de la compra
+            ShoppingListView()
+                .tabItem {
+                    Label("Compra", systemImage: "cart")
+                }
+                .tag(4)
+            
+            // Pestaña 4: Perfil
             ProfileView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.circle")
                 }
-                .tag(3)
+                .tag(4)
         }
     }
 }

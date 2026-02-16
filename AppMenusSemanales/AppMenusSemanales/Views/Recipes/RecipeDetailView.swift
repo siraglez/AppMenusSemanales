@@ -34,9 +34,18 @@ struct RecipeDetailView: View {
                 
                 Text("Ingredientes")
                     .font(.headline)
-                Text(recipe.ingredients.isEmpty ? "Sin ingredientes" : recipe.ingredients)
-                    .foregroundStyle(.secondary)
-                
+                ForEach(recipe.ingredients) { ingredient in
+                    HStack {
+                        Text("• " + ingredient.name)
+                        Spacer()
+                        Text("\(ingredient.quantity.formatted()) \(ingredient.unit)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if recipe.ingredients.isEmpty {
+                    Text("Sin ingredientes registrados").foregroundStyle(.secondary)
+                }
+
                 Divider()
                 
                 Text("Instrucciones")
