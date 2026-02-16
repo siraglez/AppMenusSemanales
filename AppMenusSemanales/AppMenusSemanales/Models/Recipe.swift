@@ -14,8 +14,8 @@ import SwiftData
 class Recipe {
     var id: UUID
     var name: String
-    var ingredients: String //Se guardarán los ingredientes separados por comas
     var instructions: String
+    @Relationship(deleteRule: .cascade) var ingredients: [Ingredient] = []
     var mealTypeRaw: String // Se guardará el valor 'raw' del Enum
     var seasonRaw: String // Se guardará el valor 'raw' del Enum
     var imageData: Data? // Para guardar foto en el futuro
@@ -31,7 +31,7 @@ class Recipe {
         set { seasonRaw = newValue.rawValue }
     }
     
-    init(name: String, ingredients: String = "", instructions: String = "", mealType: MealType = .lunch, season: Season = .all) {
+    init(name: String, ingredients: [Ingredient] = [], instructions: String = "", mealType: MealType = .lunch, season: Season = .all) {
         self.id = UUID()
         self.name = name
         self.ingredients = ingredients

@@ -12,16 +12,16 @@ import SwiftData
 @Model
 class WeeklyMenu {
     var id: UUID
-    var day: String // Lunes, Martes...
+    var dayName: String // Lunes, Martes...
+    var date: Date // Para saber de qué semana es
     var lunch: Recipe
     var dinner: Recipe
-    var date: Date // Para saber de qué semana es
     
-    init(day: String, lunch: Recipe, dinner: Recipe) {
+    init(dayName: String, date: Date, lunch: Recipe, dinner: Recipe) {
         self.id = UUID()
-        self.day = day
+        self.dayName = dayName
+        self.date = date
         self.lunch = lunch
         self.dinner = dinner
-        self.date = Date()
     }
 }
