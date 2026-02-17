@@ -14,11 +14,16 @@ struct ShoppingListView: View {
     @Query var allMenus: [WeeklyMenu]
     @State private var selectedDate = Date()
     
-    // Aquí guardaremos los nombres de lo que ya has comprado
+    // Guardar lo comprado
     @State private var checkedItems: Set<String> = []
     
-    // 1. Calculamos la lista agrupada (igual que antes)
-    var shoppingList: [IngredientGroup] {
+    // Estado para saber si la lista de completados está abierta o cerrada
+    @State private var isCompletedExpanded: Bool = false
+    
+    // MARK: LÓGICA DE DATOS
+    
+    // 1. Calcular la lista TOTAL de ingredientes necesarios
+    var fullShoppingList: [IngredientGroup] {
         let calendar = Calendar.current
         let weekOfYear = calendar.component(.weekOfYear, from: selectedDate)
         
@@ -38,6 +43,16 @@ struct ShoppingListView: View {
         }.sorted { $0.name < $1.name }
     }
     
+    // 2. Filtrar: Lo que falta por comprar
+    var pendingItems: [IngredientGroup] {
+        fullShoppingList.filter { !isChecked($0.name) }
+    }
+    
+    // 3. Filtrar: Lo que ya está comprado
+    var completedItems: [IngredientGroup] {
+        fullShoppingList.filter { isChecked($0.name) }
+    }
+    
     func addIngredient(to totals: inout [String: (Double, String)], ingredient: Ingredient) {
         let key = ingredient.name.lowercased().capitalized
         if let existing = totals[key], existing.1 == ingredient.unit {
@@ -50,82 +65,104 @@ struct ShoppingListView: View {
         }
     }
     
+    // MARK: VISTA
+    
     var body: some View {
         NavigationStack {
             List {
-                if shoppingList.isEmpty {
+                if fullShoppingList.isEmpty {
                     ContentUnavailableView("Lista vacía", systemImage: "cart", description: Text("Planifica tu semana para ver la lista de la compra."))
                 } else {
-                    Section(header: Text("Para la semana actual")) {
-                        ForEach(shoppingList) { item in
-                            // Fila interactiva
-                            Button(action: { toggleItem(item.name) }) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(item.name)
-                                            .font(.body)
-                                            .strikethrough(isChecked(item.name)) // Tachado si está comprado
-                                            .foregroundStyle(isChecked(item.name) ? .gray : .primary)
-                                        
-                                        Text("\(item.totalQuantity.formatted()) \(item.unit)")
-                                            .font(.caption)
-                                            .foregroundStyle(.blue)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    // EL CÍRCULO A LA DERECHA (Como pediste)
-                                    Image(systemName: isChecked(item.name) ? "checkmark.circle.fill" : "circle")
-                                        .font(.title2)
-                                        .foregroundStyle(isChecked(item.name) ? .green : .gray)
+                    
+                    // SECCIÓN 1: PENDIENTES (Lo importante)
+                    if !pendingItems.isEmpty {
+                        Section(header: Text("Pendiente (\(pendingItems.count))")) {
+                            ForEach(pendingItems) { item in
+                                ShoppingRow(item: item, isChecked: false) {
+                                    toggleItem(item.name)
                                 }
-                                .contentShape(Rectangle()) // Hace que toda la fila sea pulsable
                             }
-                            .buttonStyle(.plain) // Elimina el efecto de botón azul feo
+                        }
+                    } else if !completedItems.isEmpty {
+                        // Mensaje motivador si has comprado todo
+                        Section {
+                            HStack {
+                                Spacer()
+                                Label("¡Compra completada!", systemImage: "checkmark.seal.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(.green)
+                                    .padding()
+                                Spacer()
+                            }
+                        }
+                    }
+                    
+                    // SECCIÓN 2: COMPLETADOS (Desplegable)
+                    if !completedItems.isEmpty {
+                        Section {
+                            DisclosureGroup(
+                                isExpanded: $isCompletedExpanded,
+                                content: {
+                                    ForEach(completedItems) { item in
+                                        ShoppingRow(item: item, isChecked: true) {
+                                            toggleItem(item.name)
+                                        }
+                                    }
+                                },
+                                label: {
+                                    HStack {
+                                        Text("Completado (\(completedItems.count))")
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                    }
+                                }
+                            )
                         }
                     }
                 }
             }
             .navigationTitle("Lista de Compra")
             .toolbar {
-                // Botón para desmarcar todo (útil para nueva semana)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Limpiar") {
-                        clearChecks()
+                if !checkedItems.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Desmarcar todo") {
+                            withAnimation {
+                                clearChecks()
+                            }
+                        }
+                        .font(.caption)
                     }
-                    .disabled(checkedItems.isEmpty)
                 }
             }
             .onAppear {
-                loadChecks() // Cargar memoria al abrir
+                loadChecks()
             }
         }
     }
     
-    // MARK: - Lógica de "Checks" (Persistencia)
+    // MARK: FUNCIONES DE ESTADO
     
-    // Comprobar si está marcado
     func isChecked(_ name: String) -> Bool {
         return checkedItems.contains(name)
     }
     
-    // Marcar/Desmarcar y guardar
     func toggleItem(_ name: String) {
-        if checkedItems.contains(name) {
-            checkedItems.remove(name)
-        } else {
-            checkedItems.insert(name)
+        // Usar withAnimation para que el cambio de sección sea suave
+        withAnimation(.snappy) {
+            if checkedItems.contains(name) {
+                checkedItems.remove(name)
+            } else {
+                checkedItems.insert(name)
+            }
         }
         saveChecks()
     }
     
-    // Guardar en UserDefaults (Memoria del móvil)
     func saveChecks() {
         let array = Array(checkedItems)
         UserDefaults.standard.set(array, forKey: "savedShoppingChecks")
     }
     
-    // Cargar de la memoria
     func loadChecks() {
         if let saved = UserDefaults.standard.array(forKey: "savedShoppingChecks") as? [String] {
             checkedItems = Set(saved)
@@ -135,6 +172,41 @@ struct ShoppingListView: View {
     func clearChecks() {
         checkedItems.removeAll()
         saveChecks()
+    }
+}
+
+// Subvista para la fila (para no repetir código y dejarlo limpio)
+struct ShoppingRow: View {
+    let item: IngredientGroup
+    let isChecked: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                // Círculo a la derecha
+                VStack(alignment: .leading) {
+                    Text(item.name)
+                        .font(.body)
+                        .strikethrough(isChecked) // Tachado si está completado
+                        .foregroundStyle(isChecked ? .gray : .primary)
+                    
+                    if !isChecked {
+                        Text("\(item.totalQuantity.formatted()) \(item.unit)")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(isChecked ? .green : .gray)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
