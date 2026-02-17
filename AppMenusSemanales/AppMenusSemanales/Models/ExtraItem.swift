@@ -1,0 +1,28 @@
+//
+//  ExtraItem.swift
+//  AppMenusSemanales
+//
+//  Created by Sira Gonzalez-Madroño on 17/2/26.
+//
+
+// Para poder agregar otros elementos a la lista de la compra a parte de lo automático
+
+import Foundation
+import SwiftData
+
+@Model
+class ExtraItem {
+    var id: UUID
+    var name: String
+    var quantity: Double
+    var unit: String
+    var dateAdded: Date
+    
+    init(name: String, quantity: Double, unit: String) {
+        self.id = UUID()
+        self.name = name
+        self.quantity = quantity
+        self.unit = unit
+        self.dateAdded = Date()
+    }
+}

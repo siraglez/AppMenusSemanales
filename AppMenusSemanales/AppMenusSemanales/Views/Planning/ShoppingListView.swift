@@ -11,57 +11,63 @@ import SwiftUI
 import SwiftData
 
 struct ShoppingListView: View {
+    @Environment(\.modelContext) var context
+    
+    // Datos del Menú
     @Query var allMenus: [WeeklyMenu]
     @State private var selectedDate = Date()
     
-    // Guardar lo comprado
+    // Datos Manuales (NUEVO)
+    @Query var extraItems: [ExtraItem]
+    
+    // Estado de la interfaz
     @State private var checkedItems: Set<String> = []
-    
-    // Estado para saber si la lista de completados está abierta o cerrada
     @State private var isCompletedExpanded: Bool = false
+    @State private var showAddSheet: Bool = false // Para mostrar el formulario
     
-    // MARK: LÓGICA DE DATOS
+    // MARK: CÁLCULO INTELIGENTE DE LA LISTA 
     
-    // 1. Calcular la lista TOTAL de ingredientes necesarios
     var fullShoppingList: [IngredientGroup] {
+        var totals: [String: (Double, String, Bool)] = [:] // Bool indica si es borrable (manual)
+        
+        // 1. Sumar ingredientes del MENÚ (Automático)
         let calendar = Calendar.current
         let weekOfYear = calendar.component(.weekOfYear, from: selectedDate)
-        
-        let menus = allMenus.filter {
-            calendar.component(.weekOfYear, from: $0.date) == weekOfYear
-        }
-        
-        var totals: [String: (Double, String)] = [:]
+        let menus = allMenus.filter { calendar.component(.weekOfYear, from: $0.date) == weekOfYear }
         
         for menu in menus {
-            for ing in menu.lunch.ingredients { addIngredient(to: &totals, ingredient: ing) }
-            for ing in menu.dinner.ingredients { addIngredient(to: &totals, ingredient: ing) }
+            for ing in menu.lunch.ingredients { addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false) }
+            for ing in menu.dinner.ingredients { addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false) }
         }
         
+        // 2. Sumar ítems MANUALES (Extra)
+        for item in extraItems {
+            addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: item.unit, isManual: true)
+        }
+        
+        // 3. Convertir a lista final
         return totals.map { key, value in
-            IngredientGroup(name: key, totalQuantity: value.0, unit: value.1)
+            IngredientGroup(name: key, totalQuantity: value.0, unit: value.1, isManual: value.2)
         }.sorted { $0.name < $1.name }
     }
     
-    // 2. Filtrar: Lo que falta por comprar
-    var pendingItems: [IngredientGroup] {
-        fullShoppingList.filter { !isChecked($0.name) }
-    }
+    var pendingItems: [IngredientGroup] { fullShoppingList.filter { !isChecked($0.name) } }
+    var completedItems: [IngredientGroup] { fullShoppingList.filter { isChecked($0.name) } }
     
-    // 3. Filtrar: Lo que ya está comprado
-    var completedItems: [IngredientGroup] {
-        fullShoppingList.filter { isChecked($0.name) }
-    }
-    
-    func addIngredient(to totals: inout [String: (Double, String)], ingredient: Ingredient) {
-        let key = ingredient.name.lowercased().capitalized
-        if let existing = totals[key], existing.1 == ingredient.unit {
-            totals[key] = (existing.0 + ingredient.quantity, existing.1)
-        } else if let existing = totals[key] {
-            let newKey = "\(key) (\(ingredient.unit))"
-            totals[newKey] = (ingredient.quantity, ingredient.unit)
+    // Función auxiliar para sumar cantidades
+    func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
+        let key = name.lowercased().capitalized
+        
+        if let existing = totals[key] {
+            // Si la unidad coincide, sumamos. Si uno es manual, el total se marca como "contiene manual"
+            if existing.1 == unit {
+                totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
+            } else {
+                let newKey = "\(key) (\(unit))"
+                totals[newKey] = (qty, unit, isManual)
+            }
         } else {
-            totals[key] = (ingredient.quantity, ingredient.unit)
+            totals[key] = (qty, unit, isManual)
         }
     }
     
@@ -71,51 +77,41 @@ struct ShoppingListView: View {
         NavigationStack {
             List {
                 if fullShoppingList.isEmpty {
-                    ContentUnavailableView("Lista vacía", systemImage: "cart", description: Text("Planifica tu semana para ver la lista de la compra."))
+                    ContentUnavailableView("Lista vacía", systemImage: "cart", description: Text("Añade productos manualmente o genera un menú."))
                 } else {
-                    
-                    // SECCIÓN 1: PENDIENTES (Lo importante)
+                    // SECCIÓN PENDIENTES
                     if !pendingItems.isEmpty {
                         Section(header: Text("Pendiente (\(pendingItems.count))")) {
                             ForEach(pendingItems) { item in
-                                ShoppingRow(item: item, isChecked: false) {
-                                    toggleItem(item.name)
-                                }
+                                ShoppingRow(item: item, isChecked: false) { toggleItem(item.name) }
+                                    // Solo permitimos borrar si es manual (Swipe to delete)
+                                    .swipeActions {
+                                        if item.isManual {
+                                            Button("Borrar", role: .destructive) { deleteManualItem(name: item.name) }
+                                        }
+                                    }
                             }
                         }
                     } else if !completedItems.isEmpty {
-                        // Mensaje motivador si has comprado todo
-                        Section {
-                            HStack {
-                                Spacer()
-                                Label("¡Compra completada!", systemImage: "checkmark.seal.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(.green)
-                                    .padding()
-                                Spacer()
-                            }
-                        }
+                         Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green) }
                     }
                     
-                    // SECCIÓN 2: COMPLETADOS (Desplegable)
+                    // SECCIÓN COMPLETADOS
                     if !completedItems.isEmpty {
                         Section {
                             DisclosureGroup(
                                 isExpanded: $isCompletedExpanded,
                                 content: {
                                     ForEach(completedItems) { item in
-                                        ShoppingRow(item: item, isChecked: true) {
-                                            toggleItem(item.name)
-                                        }
+                                        ShoppingRow(item: item, isChecked: true) { toggleItem(item.name) }
+                                            .swipeActions {
+                                                if item.isManual {
+                                                    Button("Borrar", role: .destructive) { deleteManualItem(name: item.name) }
+                                                }
+                                            }
                                     }
                                 },
-                                label: {
-                                    HStack {
-                                        Text("Completado (\(completedItems.count))")
-                                            .foregroundStyle(.secondary)
-                                        Spacer()
-                                    }
-                                }
+                                label: { Text("Completado (\(completedItems.count))").foregroundStyle(.secondary) }
                             )
                         }
                     }
@@ -123,59 +119,50 @@ struct ShoppingListView: View {
             }
             .navigationTitle("Lista de Compra")
             .toolbar {
-                if !checkedItems.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Desmarcar todo") {
-                            withAnimation {
-                                clearChecks()
-                            }
-                        }
-                        .font(.caption)
+                // BOTÓN DE AÑADIR (+)
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showAddSheet = true }) {
+                        Image(systemName: "plus")
                     }
                 }
             }
-            .onAppear {
-                loadChecks()
+            .sheet(isPresented: $showAddSheet) {
+                AddExtraItemView() // El formulario para añadir
+                    .presentationDetents([.medium])
             }
+            .onAppear { loadChecks() }
         }
     }
     
-    // MARK: FUNCIONES DE ESTADO
-    
-    func isChecked(_ name: String) -> Bool {
-        return checkedItems.contains(name)
+    // MARK: LÓGICA DE BORRADO MANUAL
+    func deleteManualItem(name: String) {
+        // Buscamos items manuales con ese nombre y los borramos de la BD
+        let itemsToDelete = extraItems.filter { $0.name.lowercased().capitalized == name }
+        for item in itemsToDelete {
+            context.delete(item)
+        }
+        // Si estaba marcado, lo quitamos de la memoria también
+        if checkedItems.contains(name) {
+            checkedItems.remove(name)
+            saveChecks()
+        }
     }
+    
+    // MARK: LÓGICA DE CHECKS
+    func isChecked(_ name: String) -> Bool { checkedItems.contains(name) }
     
     func toggleItem(_ name: String) {
-        // Usar withAnimation para que el cambio de sección sea suave
         withAnimation(.snappy) {
-            if checkedItems.contains(name) {
-                checkedItems.remove(name)
-            } else {
-                checkedItems.insert(name)
-            }
+            if checkedItems.contains(name) { checkedItems.remove(name) } else { checkedItems.insert(name) }
         }
         saveChecks()
     }
     
-    func saveChecks() {
-        let array = Array(checkedItems)
-        UserDefaults.standard.set(array, forKey: "savedShoppingChecks")
-    }
-    
-    func loadChecks() {
-        if let saved = UserDefaults.standard.array(forKey: "savedShoppingChecks") as? [String] {
-            checkedItems = Set(saved)
-        }
-    }
-    
-    func clearChecks() {
-        checkedItems.removeAll()
-        saveChecks()
-    }
+    func saveChecks() { UserDefaults.standard.set(Array(checkedItems), forKey: "savedShoppingChecks") }
+    func loadChecks() { if let saved = UserDefaults.standard.array(forKey: "savedShoppingChecks") as? [String] { checkedItems = Set(saved) } }
 }
 
-// Subvista para la fila (para no repetir código y dejarlo limpio)
+// --- SUBVISTA: FILA DE LA LISTA ---
 struct ShoppingRow: View {
     let item: IngredientGroup
     let isChecked: Bool
@@ -184,22 +171,18 @@ struct ShoppingRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                // Círculo a la derecha
                 VStack(alignment: .leading) {
                     Text(item.name)
                         .font(.body)
-                        .strikethrough(isChecked) // Tachado si está completado
+                        .strikethrough(isChecked)
                         .foregroundStyle(isChecked ? .gray : .primary)
-                    
                     if !isChecked {
-                        Text("\(item.totalQuantity.formatted()) \(item.unit)")
+                        Text("\(item.totalQuantity.formatted()) \(item.unit)" + (item.isManual ? " (Extra)" : ""))
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(item.isManual ? .purple : .blue)
                     }
                 }
-                
                 Spacer()
-                
                 Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
                     .foregroundStyle(isChecked ? .green : .gray)
@@ -210,9 +193,52 @@ struct ShoppingRow: View {
     }
 }
 
+// --- SUBVISTA: FORMULARIO PARA AÑADIR ---
+struct AddExtraItemView: View {
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) var context
+    
+    @State private var name = ""
+    @State private var quantity = ""
+    @State private var unit = "ud"
+    let units = ["ud", "kg", "g", "L", "ml", "paquete", "bote"]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Nuevo Producto") {
+                    TextField("Nombre (ej: Papel Higiénico)", text: $name)
+                    HStack {
+                        TextField("Cantidad", text: $quantity)
+                            .keyboardType(.decimalPad)
+                        Picker("Unidad", selection: $unit) {
+                            ForEach(units, id: \.self) { Text($0) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Añadir a la lista")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Añadir") {
+                        let qty = Double(quantity.replacingOccurrences(of: ",", with: ".")) ?? 1.0
+                        let newItem = ExtraItem(name: name, quantity: qty, unit: unit)
+                        context.insert(newItem)
+                        dismiss()
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+// Estructura auxiliar mejorada
 struct IngredientGroup: Identifiable {
     let id = UUID()
     let name: String
     let totalQuantity: Double
     let unit: String
+    let isManual: Bool // Para saber si podemos borrarlo o no
 }

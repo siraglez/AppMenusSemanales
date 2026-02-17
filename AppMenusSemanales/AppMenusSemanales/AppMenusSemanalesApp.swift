@@ -22,6 +22,6 @@ struct AppMenusSemanalesApp: App {
             }
         }
         // Crear el archivo de base de datos automáticamente
-        .modelContainer(for: [Recipe.self, UserProfile.self, WeeklyMenu.self])
+        .modelContainer(for: [Recipe.self, UserProfile.self, WeeklyMenu.self, ExtraItem.self])
     }
 }
