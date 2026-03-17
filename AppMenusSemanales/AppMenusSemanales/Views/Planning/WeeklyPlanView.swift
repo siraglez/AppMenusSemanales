@@ -19,9 +19,12 @@ struct WeeklyPlanView: View {
     // 3. Traer TODAS las recetas para que el generador pueda elegir
     @Query var allRecipes: [Recipe]
     
+    @Binding var selectedTab: Int
+    
     @State private var selectedDate = Date()
     @State private var showRegenerateAlert = false
     @State private var selectedSeason: Season = .all
+    @State private var showNotEnoughAlert = false
     
     // Para ordenar los días correctamente siempre
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -63,6 +66,17 @@ struct WeeklyPlanView: View {
                 Button("Sí, crear", action: generateMenu)
             } message: {
                 Text("Esto borrará el menú actual de esta semana y creará uno nuevo.")
+            }
+            .alert("Pocas recetas disponibles", isPresented: $showNotEnoughAlert) {
+                Button("Ir a añadir recetas") {
+                    selectedTab = 1
+                }
+                Button("Generar igualmente") {
+                    generateMenu(ignoreLastWeekRule: true)   
+                }
+                Button("Cancelar", role: .cancel) { }
+            } message: {
+                Text("Necesitas al menos 14 recetas distintas (sin contar las de la semana anterior) para evitar repeticiones. Puedes añadir más recetas o generar el menú ignorando esa restricción.")
             }
         }
     }
@@ -203,6 +217,27 @@ struct WeeklyPlanView: View {
     
     // MARK: - Funciones Auxiliares
     
+    // IDs de las recetas usadas la semana anterior (para la regla de 15 días)
+    var lastWeekExcludedIDs: Set<UUID> {
+        let calendar = Calendar.current
+        guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedDate) else { return [] }
+
+        let lastWeekOfYear = calendar.component(.weekOfYear, from: lastWeekDate)
+        let lastYear       = calendar.component(.yearForWeekOfYear, from: lastWeekDate)
+
+        let lastWeekMenus = allMenus.filter {
+            calendar.component(.weekOfYear, from: $0.date)        == lastWeekOfYear &&
+            calendar.component(.yearForWeekOfYear, from: $0.date) == lastYear
+        }
+
+        var ids = Set<UUID>()
+        for menu in lastWeekMenus {
+            ids.insert(menu.lunch.id)
+            ids.insert(menu.dinner.id)
+        }
+        return ids
+    }
+    
     var weekLabel: String {
         let calendar = Calendar.current
         if calendar.isDateInThisWeek(selectedDate) {
@@ -229,16 +264,23 @@ struct WeeklyPlanView: View {
         }
     }
     
-    func generateMenu() {
-        // 1. Borramos si había algo esa semana
-        deleteCurrentWeek()
-        
-        // 2. Generamos nuevo menú pasándole la fecha seleccionada
-        let newMenu = MenuGenerator.generateWeekMenu(recipes: allRecipes, forWeekOf: selectedDate, season: selectedSeason)
-        
-        // 3. Guardamos
-        for dayPlan in newMenu {
-            context.insert(dayPlan)
+    func generateMenu(ignoreLastWeekRule: Bool = false) {
+        let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
+
+        let result = MenuGenerator.generateWeekMenu(
+            recipes: allRecipes,
+            forWeekOf: selectedDate,
+            season: selectedSeason,
+            excludedRecipeIDs: excluded
+        )
+
+        switch result {
+        case .success(let newMenu):
+            deleteCurrentWeek()                                    // ← solo borra si hay éxito
+            for dayPlan in newMenu { context.insert(dayPlan) }
+
+        case .failure(.notEnoughRecipes):
+            showNotEnoughAlert = true                              // ← el menú anterior se conserva
         }
     }
     

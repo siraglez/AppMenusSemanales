@@ -22,7 +22,7 @@ struct ContentView: View {
                 .tag(1)
             
             // Pestaña 2: Planificador (PANTALLA PRINCIPAL POR DEFECTO)
-            WeeklyPlanView()
+            WeeklyPlanView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("Planificador", systemImage: "calendar")
                 }
@@ -33,7 +33,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("Compra", systemImage: "cart")
                 }
-                .tag(4)
+                .tag(3)
             
             // Pestaña 4: Perfil
             ProfileView()

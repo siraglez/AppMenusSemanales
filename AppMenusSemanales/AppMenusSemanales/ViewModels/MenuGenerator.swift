@@ -9,57 +9,77 @@
 import Foundation
 import SwiftData
 
+// Resultado del generador: éxito con el menú, o fallo por falta de recetas
+enum MenuGenerationError: Error {
+    case notEnoughRecipes
+}
+
 class MenuGenerator {
-    
-    static func generateWeekMenu(recipes: [Recipe], forWeekOf date: Date, season: Season = .all) -> [WeeklyMenu] {
-        var menu: [WeeklyMenu] = []
+
+    static func generateWeekMenu(
+        recipes: [Recipe],
+        forWeekOf date: Date,
+        season: Season = .all,
+        excludedRecipeIDs: Set<UUID> = []   // IDs de la semana anterior
+    ) -> Result<[WeeklyMenu], MenuGenerationError> {
+
         let days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-        
-        // 1. Filtramos por la estación seleccionada (si no hay, usamos todas)
-        var availableRecipes = recipes.filter { recipe in
-            season == .all || recipe.season == season || recipe.season == .all
-        }
-        
-        // SEGURIDAD: Si el filtro de estación deja la lista vacía, usamos TODAS las recetas
-        if availableRecipes.isEmpty {
-            availableRecipes = recipes
-        }
-        
-        // Si aún así no hay recetas, devolvemos menú vacío
-        if availableRecipes.isEmpty { return [] }
-        
-        // 2. Separamos Comidas y Cenas
-        var lunches = availableRecipes.filter { $0.mealType == .lunch || $0.mealType == .both }.shuffled()
-        var dinners = availableRecipes.filter { $0.mealType == .dinner || $0.mealType == .both }.shuffled()
-        
-        // FALLBACK: Si no hay comidas, usamos lo que haya (cenas) y viceversa
-        if lunches.isEmpty { lunches = availableRecipes.shuffled() }
-        if dinners.isEmpty { dinners = availableRecipes.shuffled() }
-        
-        // 3. Calcular el inicio de la semana (Lunes)
         var calendar = Calendar.current
-        calendar.firstWeekday = 2 // Forzamos que la semana empiece en Lunes (2) por seguridad
-        
-        // Buscar el lunes de la semana de la fecha dada
-        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)) ?? date
-        
-        // 4. Generar días con fechas reales
-        for (index, day) in days.enumerated() {
-            // Usamos el operador módulo (%) para repetir recetas si hay pocas
-            let lunchRecipe = lunches[index % lunches.count]
-            let dinnerRecipe = dinners[index % dinners.count]
-            
-            // Sumar días al lunes para obtener la fecha de ese día
-            let dayDate = calendar.date(byAdding: .day, value: index, to: startOfWeek) ?? Date()
-            
-            // CORRECCIÓN AQUÍ:
-            // 1. Usamos 'dayName:' en vez de 'day:'
-            // 2. Usamos 'dayDate' (la calculada) en vez de 'date'
-            let dailyMenu = WeeklyMenu(dayName: day, date: dayDate, lunch: lunchRecipe, dinner: dinnerRecipe)
-            
-            menu.append(dailyMenu)
+        calendar.firstWeekday = 2
+
+        // 1. Filtrar por estación
+        var available = recipes.filter {
+            season == .all || $0.season == season || $0.season == .all
         }
-        
-        return menu
+        if available.isEmpty { available = recipes }
+
+        // 2. Excluir recetas de la semana anterior
+        let candidates = available.filter { !excludedRecipeIDs.contains($0.id) }
+
+        // 3. Separar en pools y mezclar
+        var lunchPool  = candidates.filter { $0.mealType == .lunch  || $0.mealType == .both }.shuffled()
+        var dinnerPool = candidates.filter { $0.mealType == .dinner || $0.mealType == .both }.shuffled()
+
+        if lunchPool.isEmpty  { lunchPool  = candidates.shuffled() }
+        if dinnerPool.isEmpty { dinnerPool = candidates.shuffled() }
+
+        // 4. Seleccionar 7 comidas y 7 cenas SIN repetir ninguna receta entre sí
+        var usedIDs = Set<UUID>()
+        var lunches: [Recipe] = []
+        var dinners: [Recipe] = []
+
+        for recipe in lunchPool {
+            if lunches.count == 7 { break }
+            if !usedIDs.contains(recipe.id) {
+                lunches.append(recipe)
+                usedIDs.insert(recipe.id)
+            }
+        }
+
+        for recipe in dinnerPool {
+            if dinners.count == 7 { break }
+            if !usedIDs.contains(recipe.id) {   // evita solaparse con comidas
+                dinners.append(recipe)
+                usedIDs.insert(recipe.id)
+            }
+        }
+
+        // 5. Comprobar si hay suficientes tras deduplicar
+        guard lunches.count == 7, dinners.count == 7 else {
+            return .failure(.notEnoughRecipes)
+        }
+
+        // 6. Construir el menú día a día
+        let startOfWeek = calendar.date(
+            from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        ) ?? date
+
+        var menu: [WeeklyMenu] = []
+        for (index, day) in days.enumerated() {
+            let dayDate = calendar.date(byAdding: .day, value: index, to: startOfWeek) ?? Date()
+            menu.append(WeeklyMenu(dayName: day, date: dayDate, lunch: lunches[index], dinner: dinners[index]))
+        }
+
+        return .success(menu)
     }
 }
