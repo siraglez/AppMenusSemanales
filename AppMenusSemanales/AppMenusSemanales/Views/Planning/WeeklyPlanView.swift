@@ -63,7 +63,7 @@ struct WeeklyPlanView: View {
             // Alerta para confirmar regeneración
             .alert("¿Crear nuevo menú?", isPresented: $showRegenerateAlert) {
                 Button("Cancelar", role: .cancel) { }
-                Button("Sí, crear", action: generateMenu)
+                Button("Sí, crear", action: { generateMenu() })
             } message: {
                 Text("Esto borrará el menú actual de esta semana y creará uno nuevo.")
             }
