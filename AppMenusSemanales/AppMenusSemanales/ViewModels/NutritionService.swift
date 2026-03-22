@@ -73,6 +73,36 @@ class NutritionService {
         "salsa de soja": "soy sauce", "miel": "honey"
     ]
     
+    // MARK: - Detección automática de categoría
+    static func detectCategory(from ingredients: [Ingredient]) -> RecipeCategory {
+        let names = ingredients.map { $0.name.lowercased() }
+
+        func matches(_ keywords: [String]) -> Int {
+            keywords.filter { kw in names.contains { $0.contains(kw) } }.count
+        }
+
+        let scores: [(RecipeCategory, Int)] = [
+            (.meat,      matches(["pollo", "ternera", "cerdo", "lomo", "pavo", "cordero",
+                                  "conejo", "carne", "jamón", "bacon", "chorizo", "pechuga",
+                                  "muslo", "filete", "costilla", "hamburguesa", "salchicha"])),
+            (.fish,      matches(["salmón", "atún", "merluza", "bacalao", "sardina", "gambas",
+                                  "mejillones", "calamar", "pulpo", "anchoas", "boquerones",
+                                  "trucha", "dorada", "pescado", "marisco", "langostino", "sepia"])),
+            (.legume,    matches(["lenteja", "garbanzo", "alubia", "judía", "soja", "habas", "legumbre"])),
+            (.vegetable, matches(["espinaca", "brócoli", "coliflor", "berenjena", "calabacín",
+                                  "pimiento", "zanahoria", "lechuga", "pepino", "puerro",
+                                  "apio", "espárrago", "alcachofa", "verdura", "ensalada", "remolacha"])),
+            (.eggs,      matches(["huevo", "tortilla", "clara", "yema"])),
+            (.pastaRice, matches(["pasta", "arroz", "macarrón", "espagueti", "fideos",
+                                  "lasaña", "cuscús", "quinoa", "risotto"]))
+        ]
+
+        if let best = scores.max(by: { $0.1 < $1.1 }), best.1 > 0 {
+            return best.0
+        }
+        return .other
+    }
+    
     // MARK: - Función principal
     static func calculateNutrition(for ingredients: [Ingredient]) async -> NutritionInfo {
         var total = NutritionInfo()

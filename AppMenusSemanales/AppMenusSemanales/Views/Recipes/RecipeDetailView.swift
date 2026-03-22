@@ -28,6 +28,11 @@ struct RecipeDetailView: View {
                         .padding(8)
                         .background(Color.orange.opacity(0.1))
                         .cornerRadius(8)
+                    
+                    Label(recipe.category.icon + " " + recipe.category.rawValue, systemImage: "")
+                        .padding(8)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(8)
                 }
                 
                 if let calories = recipe.calories {

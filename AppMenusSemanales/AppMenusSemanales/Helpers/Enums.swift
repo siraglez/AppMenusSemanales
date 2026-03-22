@@ -27,3 +27,28 @@ enum Season: String, CaseIterable, Codable, Identifiable {
     
     var id: String { self.rawValue }
 }
+
+// Definir el tipo de comida
+enum RecipeCategory: String, CaseIterable, Codable, Identifiable {
+    case meat = "Carne"
+    case fish = "Pescado"
+    case legume = "Legumbre"
+    case vegetable = "Verdura"
+    case eggs = "Huevos"
+    case pastaRice = "Pasta/Arroz"
+    case other = "Otro"
+    
+    var id: String { self.rawValue }
+    
+    var icon: String {
+        switch self {
+        case .meat: return "🥩"
+        case .fish: return "🐟"
+        case .legume: return "🫘"
+        case .vegetable: return "🥦"
+        case .eggs: return "🥚"
+        case .pastaRice: return "🍝"
+        case .other: return "🍽️"
+        }
+    }
+}

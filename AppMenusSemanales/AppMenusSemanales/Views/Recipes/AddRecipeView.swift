@@ -154,6 +154,7 @@ struct AddRecipeView: View {
         
         // Calcular nutrición antes de guardar
         let nutrition = await NutritionService.calculateNutrition(for: tempIngredients)
+        let detectedCategory = NutritionService.detectCategory(from: tempIngredients) // ← nueva línea
         
         if let recipe = recipeToEdit {
             recipe.name = name
@@ -165,6 +166,7 @@ struct AddRecipeView: View {
             recipe.proteins = nutrition.proteins
             recipe.carbs    = nutrition.carbs
             recipe.fats     = nutrition.fats
+            recipe.category = detectedCategory
         } else {
             let newRecipe = Recipe(
                 name: name,
@@ -177,6 +179,7 @@ struct AddRecipeView: View {
             newRecipe.proteins = nutrition.proteins
             newRecipe.carbs    = nutrition.carbs
             newRecipe.fats     = nutrition.fats
+            newRecipe.category = detectedCategory
             context.insert(newRecipe)
         }
         

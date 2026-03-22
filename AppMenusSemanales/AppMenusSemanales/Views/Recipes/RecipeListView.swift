@@ -32,6 +32,10 @@ struct RecipeListView: View {
                                     .font(.caption)
                                     .padding(5)
                                     .background(Color.orange.opacity(0.1))
+                                Text(recipe.category.icon + " " + recipe.category.rawValue)
+                                    .font(.caption)
+                                    .padding(5)
+                                    .background(Color.green.opacity(0.1))
                             }
                         }
                     }

@@ -19,6 +19,7 @@ class Recipe {
     var mealTypeRaw: String // Se guardará el valor 'raw' del Enum
     var seasonRaw: String // Se guardará el valor 'raw' del Enum
     var imageData: Data? // Para guardar foto en el futuro
+    var categoryRaw: String
     // Datos nutricionales
     var calories: Double?
     var proteins: Double?
@@ -36,6 +37,11 @@ class Recipe {
         set { seasonRaw = newValue.rawValue }
     }
     
+    var category: RecipeCategory {
+        get { RecipeCategory(rawValue: categoryRaw) ?? .other }
+        set { categoryRaw = newValue.rawValue }
+    }
+    
     init(name: String, ingredients: [Ingredient] = [], instructions: String = "", mealType: MealType = .lunch, season: Season = .all) {
         self.id = UUID()
         self.name = name
@@ -43,5 +49,6 @@ class Recipe {
         self.instructions = instructions
         self.mealTypeRaw = mealType.rawValue
         self.seasonRaw = season.rawValue
+        self.categoryRaw = RecipeCategory.other.rawValue
     }
 }
