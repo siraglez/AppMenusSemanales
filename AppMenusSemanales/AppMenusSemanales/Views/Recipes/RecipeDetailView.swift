@@ -30,6 +30,26 @@ struct RecipeDetailView: View {
                         .cornerRadius(8)
                 }
                 
+                if let calories = recipe.calories {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Información Nutricional")
+                            .font(.headline)
+                        Text("Valores aproximados para la receta completa")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        HStack(spacing: 0) {
+                            NutrientBadge(label: "Calorías", value: calories, unit: "kcal", color: .orange)
+                            NutrientBadge(label: "Proteínas", value: recipe.proteins ?? 0, unit: "g", color: .blue)
+                            NutrientBadge(label: "Carbohidratos", value: recipe.carbs ?? 0, unit: "g", color: .yellow)
+                            NutrientBadge(label: "Grasas", value: recipe.fats ?? 0, unit: "g", color: .red)
+                        }
+                        .padding()
+                        .background(Color(.systemGroupedBackground))
+                        .cornerRadius(12)
+                    }
+                }
+                
                 Divider()
                 
                 Text("Ingredientes")
@@ -65,5 +85,28 @@ struct RecipeDetailView: View {
             // Reutilizar la vista de añadir pasándole la receta actual
             AddRecipeView(recipeToEdit: recipe)
         }
+    }
+}
+
+struct NutrientBadge: View {
+    let label: String
+    let value: Double
+    let unit: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(String(format: "%.0f", value))
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(color)
+            Text(unit)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }

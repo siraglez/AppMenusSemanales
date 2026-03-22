@@ -19,6 +19,11 @@ class Recipe {
     var mealTypeRaw: String // Se guardará el valor 'raw' del Enum
     var seasonRaw: String // Se guardará el valor 'raw' del Enum
     var imageData: Data? // Para guardar foto en el futuro
+    // Datos nutricionales
+    var calories: Double?
+    var proteins: Double?
+    var carbs: Double?
+    var fats: Double?
     
     // Convertir los String guardados a los Enums para usarlos fácil en código
     var mealType: MealType {

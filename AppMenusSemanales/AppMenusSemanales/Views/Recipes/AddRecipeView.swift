@@ -20,6 +20,8 @@ struct AddRecipeView: View {
     @State private var selectedSeason: Season = .all
     @State private var selectedMealType: MealType = .lunch
     
+    @State private var isCalculatingNutrition = false
+    
     // --- VARIABLES PARA EL NUEVO INGREDIENTE ---
     @State private var newIngName: String = ""
     @State private var newIngQuantity: String = ""
@@ -63,7 +65,6 @@ struct AddRecipeView: View {
                             .keyboardType(.decimalPad)
                             .frame(width: 50) // Ancho fijo para la cantidad
                         
-                        // CORRECCIÓN 1: Estilo Menú para que no tape el botón
                         Picker("", selection: $newIngUnit) {
                             ForEach(units, id: \.self) { unit in
                                 Text(unit).tag(unit)
@@ -73,7 +74,6 @@ struct AddRecipeView: View {
                         .labelsHidden()
                         .frame(width: 60) // Limitamos su ancho
                         
-                        // CORRECCIÓN 2: ButtonStyle Borderless para que funcione el clic
                         Button(action: addIngredient) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundStyle(.blue)
@@ -111,8 +111,17 @@ struct AddRecipeView: View {
                     Button("Cancelar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Guardar") { save() }
-                        .disabled(name.isEmpty || tempIngredients.isEmpty)
+                    Button(action: { Task { await save() } }) {
+                        if isCalculatingNutrition {
+                            HStack(spacing: 6) {
+                                ProgressView().scaleEffect(0.8)
+                                Text("Calculando...")
+                            }
+                        } else {
+                            Text("Guardar")
+                        }
+                    }
+                    .disabled(name.isEmpty || tempIngredients.isEmpty || isCalculatingNutrition)
                 }
             }
             .onAppear {
@@ -140,13 +149,22 @@ struct AddRecipeView: View {
         newIngQuantity = ""
     }
     
-    func save() {
+    func save() async {
+        isCalculatingNutrition = true
+        
+        // Calcular nutrición antes de guardar
+        let nutrition = await NutritionService.calculateNutrition(for: tempIngredients)
+        
         if let recipe = recipeToEdit {
             recipe.name = name
             recipe.instructions = instructions
             recipe.mealType = selectedMealType
             recipe.season = selectedSeason
             recipe.ingredients = tempIngredients
+            recipe.calories = nutrition.calories
+            recipe.proteins = nutrition.proteins
+            recipe.carbs    = nutrition.carbs
+            recipe.fats     = nutrition.fats
         } else {
             let newRecipe = Recipe(
                 name: name,
@@ -155,8 +173,14 @@ struct AddRecipeView: View {
                 mealType: selectedMealType,
                 season: selectedSeason
             )
+            newRecipe.calories = nutrition.calories
+            newRecipe.proteins = nutrition.proteins
+            newRecipe.carbs    = nutrition.carbs
+            newRecipe.fats     = nutrition.fats
             context.insert(newRecipe)
         }
+        
+        isCalculatingNutrition = false
         dismiss()
     }
 }

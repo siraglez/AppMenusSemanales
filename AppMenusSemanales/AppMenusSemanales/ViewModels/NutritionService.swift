@@ -1,0 +1,159 @@
+//
+//  NutritionService.swift
+//  AppMenusSemanales
+//
+//  Created by Sira González-Madroño on 22/3/26.
+//
+// Llama a la API de USDA para calcular el valor nutricional de una receta
+
+import Foundation
+
+// Datos nutricionales básicos de una receta completa
+struct NutritionInfo {
+    var calories: Double = 0
+    var proteins: Double = 0
+    var carbs: Double = 0
+    var fats: Double = 0
+}
+
+class NutritionService {
+    
+    private static let apiKey = "zXr5QO3c0pMJmlanghvKyBxeJ330IJeGoibzkdeA"
+    
+    // MARK: - Diccionario de traducción Español -> Inglés
+    private static let translations: [String: String] = [
+        // Carnes y aves
+        "pollo": "chicken", "pechuga de pollo": "chicken breast", "muslo de pollo": "chicken thigh",
+        "ternera": "beef", "carne picada": "ground beef", "cerdo": "pork", "lomo": "pork loin",
+        "jamón": "ham", "bacon": "bacon", "chorizo": "chorizo", "salchichón": "salami",
+        "pavo": "turkey", "cordero": "lamb", "conejo": "rabbit",
+
+        // Pescados y mariscos
+        "salmón": "salmon", "atún": "tuna", "merluza": "hake", "bacalao": "cod",
+        "sardina": "sardine", "gambas": "shrimp", "mejillones": "mussels", "calamar": "squid",
+        "pulpo": "octopus", "anchoas": "anchovies", "trucha": "trout", "dorada": "sea bream",
+        "boquerones": "anchovies",
+
+        // Verduras y hortalizas
+        "tomate": "tomato", "cebolla": "onion", "ajo": "garlic", "pimiento": "bell pepper",
+        "zanahoria": "carrot", "patata": "potato", "papa": "potato", "lechuga": "lettuce",
+        "espinaca": "spinach", "brócoli": "broccoli", "coliflor": "cauliflower",
+        "berenjena": "eggplant", "calabacín": "zucchini", "pepino": "cucumber",
+        "puerro": "leek", "apio": "celery", "espárrago": "asparagus", "alcachofa": "artichoke",
+        "judía verde": "green bean", "guisante": "pea", "maíz": "corn", "remolacha": "beet",
+        "champiñón": "mushroom", "seta": "mushroom", "cebolleta": "scallion",
+        
+        // Frutas
+        "manzana": "apple", "naranja": "orange", "limón": "lemon", "plátano": "banana",
+        "fresa": "strawberry", "uva": "grape", "melocotón": "peach", "pera": "pear",
+        "sandía": "watermelon", "melón": "melon", "piña": "pineapple", "mango": "mango",
+
+        // Legumbres
+        "lenteja": "lentil", "garbanzo": "chickpea", "alubia": "white bean",
+        "judía": "kidney bean", "soja": "soy", "habas": "fava beans",
+
+        // Cereales y pasta
+        "arroz": "rice", "pasta": "pasta", "macarrón": "macaroni", "espagueti": "spaghetti",
+        "pan": "bread", "pan de molde": "white bread", "harina": "flour",
+        "avena": "oats", "quinoa": "quinoa", "cuscús": "couscous",
+
+        // Lácteos y huevos
+        "leche": "milk", "queso": "cheese", "queso manchego": "manchego cheese",
+        "yogur": "yogurt", "mantequilla": "butter", "nata": "heavy cream",
+        "huevo": "egg", "clara de huevo": "egg white", "yema de huevo": "egg yolk",
+
+        // Aceites y grasas
+        "aceite de oliva": "olive oil", "aceite": "vegetable oil",
+        
+        // Condimentos y otros
+        "sal": "salt", "azúcar": "sugar", "pimienta": "black pepper",
+        "tomate frito": "tomato sauce", "caldo de pollo": "chicken broth",
+        "caldo de verduras": "vegetable broth", "vinagre": "vinegar",
+        "mayonesa": "mayonnaise", "mostaza": "mustard", "ketchup": "ketchup",
+        "salsa de soja": "soy sauce", "miel": "honey"
+    ]
+    
+    // MARK: - Función principal
+    static func calculateNutrition(for ingredients: [Ingredient]) async -> NutritionInfo {
+        var total = NutritionInfo()
+        
+        for ingredient in ingredients {
+            let englishName = translate(ingredient.name)
+            
+            // Llamada a la API por cada ingrediente
+            if let perHundredGrams = await fetchNutrients(for: englishName) {
+                let scale = scaleFactor(quantity: ingredient.quantity, unit: ingredient.unit)
+                total.calories += perHundredGrams.calories * scale
+                total.proteins += perHundredGrams.proteins * scale
+                total.carbs += perHundredGrams.carbs * scale
+                total.fats += perHundredGrams.fats * scale
+            }
+        }
+        
+        return total
+    }
+    
+    // MARK: - Llamada a la API de USDA
+    private static func fetchNutrients(for foodName: String) async -> NutritionInfo? {
+        let encoded = foodName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? foodName
+        let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(encoded)&pageSize=1&api_key=\(apiKey)"
+        
+        guard let url = URL(string: urlString) else { return nil }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from:url)
+            let decoded = try JSONDecoder().decode(USDAResponse.self, from: data)
+            guard let food = decoded.foods.first else { return nil }
+            
+            // Buscar los 4 nutrientes por su ID de USDA
+            var info = NutritionInfo()
+            for nutrient in food.foodNutrients {
+                switch nutrient.nutrientId {
+                case 1008: info.calories = nutrient.value ?? 0 // Energía (kcal)
+                case 1003: info.proteins = nutrient.value ?? 0 // Proteínas (g)
+                case 1005: info.carbs = nutrient.value ?? 0 // Carbohidratos (g)
+                case 1004: info.fats = nutrient.value ?? 0 // Grasas (g)
+                default: break
+                }
+            }
+            return info
+        } catch {
+            return nil // Si falla, ignoramos ese ingrediente
+        }
+    }
+    
+    // MARK: - Traducción
+    private static func translate(_ name: String) -> String {
+        let key = name.lowercased().trimmingCharacters(in: .whitespaces)
+        return translations[key] ?? name // Si no está en el diccionario, se envía tal cual
+    }
+    
+    // MARK: - Factor de escala (la API devuelve nutrientes por cada 100g)
+    private static func scaleFactor(quantity: Double, unit: String) -> Double {
+        switch unit.lowercased() {
+        case "g": return quantity / 100
+        case "kg": return quantity * 10
+        case "ml": return quantity / 100 // Asumiendo densidad aproximada de 1g/ml
+        case "l": return quantity * 10
+        case "cucharada": return quantity * 0.15 // Asumiendo aproximadamente 15g por cucharada
+        case "pizca": return quantity * 0.01 // Asumiendo aproximadamente 1g por pizca
+        case "ud": return quantity * 1.0 // Asumiengo aproximadamente 100g por unidad
+        default: return quantity / 100
+        }
+    }
+}
+
+// MARK: - Modelos de la respuesta JSON de USDA
+
+private struct USDAResponse: Decodable {
+    let foods: [USDAFood]
+}
+
+private struct USDAFood: Decodable {
+    let foodNutrients: [USDANutrient]
+}
+
+private struct USDANutrient: Decodable {
+    let nutrientId: Int
+    let value: Double?
+}
