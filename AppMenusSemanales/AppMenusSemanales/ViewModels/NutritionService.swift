@@ -7,6 +7,7 @@
 // Llama a la API de USDA para calcular el valor nutricional de una receta
 
 import Foundation
+import Translation
 
 // Datos nutricionales básicos de una receta completa
 struct NutritionInfo {
@@ -20,57 +21,51 @@ class NutritionService {
     
     private static let apiKey = "zXr5QO3c0pMJmlanghvKyBxeJ330IJeGoibzkdeA"
     
-    // MARK: - Diccionario de traducción Español -> Inglés
+    private static var translationCache: [String: String] = [:]
+    
+    // MARK: - Diccionario de traducción Español -> Inglés (FALLBACK)
     private static let translations: [String: String] = [
-        // Carnes y aves
-        "pollo": "chicken", "pechuga de pollo": "chicken breast", "muslo de pollo": "chicken thigh",
-        "ternera": "beef", "carne picada": "ground beef", "cerdo": "pork", "lomo": "pork loin",
-        "jamón": "ham", "bacon": "bacon", "chorizo": "chorizo", "salchichón": "salami",
-        "pavo": "turkey", "cordero": "lamb", "conejo": "rabbit",
-
-        // Pescados y mariscos
-        "salmón": "salmon", "atún": "tuna", "merluza": "hake", "bacalao": "cod",
-        "sardina": "sardine", "gambas": "shrimp", "mejillones": "mussels", "calamar": "squid",
-        "pulpo": "octopus", "anchoas": "anchovies", "trucha": "trout", "dorada": "sea bream",
-        "boquerones": "anchovies",
-
-        // Verduras y hortalizas
-        "tomate": "tomato", "cebolla": "onion", "ajo": "garlic", "pimiento": "bell pepper",
-        "zanahoria": "carrot", "patata": "potato", "papa": "potato", "lechuga": "lettuce",
-        "espinaca": "spinach", "brócoli": "broccoli", "coliflor": "cauliflower",
-        "berenjena": "eggplant", "calabacín": "zucchini", "pepino": "cucumber",
-        "puerro": "leek", "apio": "celery", "espárrago": "asparagus", "alcachofa": "artichoke",
-        "judía verde": "green bean", "guisante": "pea", "maíz": "corn", "remolacha": "beet",
-        "champiñón": "mushroom", "seta": "mushroom", "cebolleta": "scallion",
-        
-        // Frutas
-        "manzana": "apple", "naranja": "orange", "limón": "lemon", "plátano": "banana",
-        "fresa": "strawberry", "uva": "grape", "melocotón": "peach", "pera": "pear",
-        "sandía": "watermelon", "melón": "melon", "piña": "pineapple", "mango": "mango",
-
-        // Legumbres
-        "lenteja": "lentil", "garbanzo": "chickpea", "alubia": "white bean",
-        "judía": "kidney bean", "soja": "soy", "habas": "fava beans",
-
-        // Cereales y pasta
-        "arroz": "rice", "pasta": "pasta", "macarrón": "macaroni", "espagueti": "spaghetti",
-        "pan": "bread", "pan de molde": "white bread", "harina": "flour",
-        "avena": "oats", "quinoa": "quinoa", "cuscús": "couscous",
-
-        // Lácteos y huevos
-        "leche": "milk", "queso": "cheese", "queso manchego": "manchego cheese",
-        "yogur": "yogurt", "mantequilla": "butter", "nata": "heavy cream",
-        "huevo": "egg", "clara de huevo": "egg white", "yema de huevo": "egg yolk",
-
-        // Aceites y grasas
-        "aceite de oliva": "olive oil", "aceite": "vegetable oil",
-        
-        // Condimentos y otros
-        "sal": "salt", "azúcar": "sugar", "pimienta": "black pepper",
-        "tomate frito": "tomato sauce", "caldo de pollo": "chicken broth",
-        "caldo de verduras": "vegetable broth", "vinagre": "vinegar",
-        "mayonesa": "mayonnaise", "mostaza": "mustard", "ketchup": "ketchup",
-        "salsa de soja": "soy sauce", "miel": "honey"
+            // Carnes y aves
+            "pollo": "chicken", "pechuga de pollo": "chicken breast", "muslo de pollo": "chicken thigh",
+            "ternera": "beef", "carne picada": "ground beef", "cerdo": "pork", "lomo": "pork loin",
+            "jamón": "ham", "bacon": "bacon", "chorizo": "chorizo", "salchichón": "salami",
+            "pavo": "turkey", "cordero": "lamb", "conejo": "rabbit",
+            // Pescados y mariscos
+            "salmón": "salmon", "atún": "tuna", "merluza": "hake", "bacalao": "cod",
+            "sardina": "sardine", "gambas": "shrimp", "mejillones": "mussels", "calamar": "squid",
+            "pulpo": "octopus", "anchoas": "anchovies", "trucha": "trout", "dorada": "sea bream",
+            "boquerones": "anchovies",
+            // Verduras y hortalizas
+            "tomate": "tomato", "cebolla": "onion", "ajo": "garlic", "pimiento": "bell pepper",
+            "zanahoria": "carrot", "patata": "potato", "papa": "potato", "lechuga": "lettuce",
+            "espinaca": "spinach", "brócoli": "broccoli", "coliflor": "cauliflower",
+            "berenjena": "eggplant", "calabacín": "zucchini", "pepino": "cucumber",
+            "puerro": "leek", "apio": "celery", "espárrago": "asparagus", "alcachofa": "artichoke",
+            "judía verde": "green bean", "guisante": "pea", "maíz": "corn", "remolacha": "beet",
+            "champiñón": "mushroom", "seta": "mushroom", "cebolleta": "scallion",
+            // Frutas
+            "manzana": "apple", "naranja": "orange", "limón": "lemon", "plátano": "banana",
+            "fresa": "strawberry", "uva": "grape", "melocotón": "peach", "pera": "pear",
+            "sandía": "watermelon", "melón": "melon", "piña": "pineapple", "mango": "mango",
+            // Legumbres
+            "lenteja": "lentil", "garbanzo": "chickpea", "alubia": "white bean",
+            "judía": "kidney bean", "soja": "soy", "habas": "fava beans",
+            // Cereales y pasta
+            "arroz": "rice", "pasta": "pasta", "macarrón": "macaroni", "espagueti": "spaghetti",
+            "pan": "bread", "pan de molde": "white bread", "harina": "flour",
+            "avena": "oats", "quinoa": "quinoa", "cuscús": "couscous",
+            // Lácteos y huevos
+            "leche": "milk", "queso": "cheese", "queso manchego": "manchego cheese",
+            "yogur": "yogurt", "mantequilla": "butter", "nata": "heavy cream",
+            "huevo": "egg", "clara de huevo": "egg white", "yema de huevo": "egg yolk",
+            // Aceites y grasas
+            "aceite de oliva": "olive oil", "aceite": "vegetable oil",
+            // Condimentos y otros
+            "sal": "salt", "azúcar": "sugar", "pimienta": "black pepper",
+            "tomate frito": "tomato sauce", "caldo de pollo": "chicken broth",
+            "caldo de verduras": "vegetable broth", "vinagre": "vinegar",
+            "mayonesa": "mayonnaise", "mostaza": "mustard", "ketchup": "ketchup",
+            "salsa de soja": "soy sauce", "miel": "honey"
     ]
     
     // MARK: - Detección automática de categoría
@@ -104,11 +99,19 @@ class NutritionService {
     }
     
     // MARK: - Función principal
-    static func calculateNutrition(for ingredients: [Ingredient]) async -> NutritionInfo {
+    static func calculateNutrition(
+        for ingredients: [Ingredient],
+        translationSession: TranslationSession? = nil
+    ) async -> NutritionInfo {
         var total = NutritionInfo()
         
         for ingredient in ingredients {
-            let englishName = translate(ingredient.name)
+            let englishName: String
+            if let session = translationSession {
+                englishName = await translateWithApple(ingredient.name, session: session)
+            } else {
+                englishName = translateWithDictionary(ingredient.name)
+            }
             
             // Llamada a la API por cada ingrediente
             if let perHundredGrams = await fetchNutrients(for: englishName) {
@@ -121,6 +124,28 @@ class NutritionService {
         }
         
         return total
+    }
+    
+    // MARK: - Traducción con Apple Translation
+    private static func translateWithApple(_ text: String, session: TranslationSession) async -> String {
+        let key = text.lowercased().trimmingCharacters(in: .whitespaces)
+        
+        if let cached = translationCache[key] { return cached }
+        
+        do {
+            let response = try await session.translate(text)
+            let result = response.targetText
+            translationCache[key] = result
+            return result
+        } catch {
+            return translateWithDictionary(text)
+        }
+    }
+    
+    // MARK: - Traducción con diccionario
+    private static func translateWithDictionary(_ name: String) -> String {
+        let key = name.lowercased().trimmingCharacters(in: .whitespaces)
+        return translations[key] ?? name
     }
     
     // MARK: - Llamada a la API de USDA
@@ -150,12 +175,6 @@ class NutritionService {
         } catch {
             return nil // Si falla, ignoramos ese ingrediente
         }
-    }
-    
-    // MARK: - Traducción
-    private static func translate(_ name: String) -> String {
-        let key = name.lowercased().trimmingCharacters(in: .whitespaces)
-        return translations[key] ?? name // Si no está en el diccionario, se envía tal cual
     }
     
     // MARK: - Factor de escala (la API devuelve nutrientes por cada 100g)

@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import Translation
 
 struct AddRecipeView: View {
     @Environment(\.dismiss) var dismiss
@@ -21,6 +22,7 @@ struct AddRecipeView: View {
     @State private var selectedMealType: MealType = .lunch
     
     @State private var isCalculatingNutrition = false
+    @State private var translationConfig: TranslationSession.Configuration?
     
     // --- VARIABLES PARA EL NUEVO INGREDIENTE ---
     @State private var newIngName: String = ""
@@ -111,7 +113,7 @@ struct AddRecipeView: View {
                     Button("Cancelar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: { Task { await save() } }) {
+                    Button(action: startSaveProcess) {
                         if isCalculatingNutrition {
                             HStack(spacing: 6) {
                                 ProgressView().scaleEffect(0.8)
@@ -133,7 +135,19 @@ struct AddRecipeView: View {
                     tempIngredients = recipe.ingredients
                 }
             }
+            .translationTask(translationConfig) { session in
+                await save(session: session)
+                translationConfig = nil
+            }
         }
+    }
+    
+    func startSaveProcess() {
+        isCalculatingNutrition = true
+        translationConfig = TranslationSession.Configuration(
+            source: Locale.Language(identifier: "es"),
+            target: Locale.Language(identifier: "en")
+        )
     }
     
     func addIngredient() {
@@ -149,12 +163,12 @@ struct AddRecipeView: View {
         newIngQuantity = ""
     }
     
-    func save() async {
-        isCalculatingNutrition = true
-        
-        // Calcular nutrición antes de guardar
-        let nutrition = await NutritionService.calculateNutrition(for: tempIngredients)
-        let detectedCategory = NutritionService.detectCategory(from: tempIngredients) // ← nueva línea
+    func save(session: TranslationSession? = nil) async {
+        let nutrition = await NutritionService.calculateNutrition(
+            for: tempIngredients,
+            translationSession: session
+        )
+        let detectedCategory = NutritionService.detectCategory(from: tempIngredients)
         
         if let recipe = recipeToEdit {
             recipe.name = name
