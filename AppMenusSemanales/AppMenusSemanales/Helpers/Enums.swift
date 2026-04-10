@@ -42,13 +42,20 @@ enum RecipeCategory: String, CaseIterable, Codable, Identifiable {
     
     var icon: String {
         switch self {
-        case .meat: return "🥩"
-        case .fish: return "🐟"
-        case .legume: return "🫘"
-        case .vegetable: return "🥦"
-        case .eggs: return "🥚"
-        case .pastaRice: return "🍝"
-        case .other: return "🍽️"
+        case .meat: return "meat"
+        case .fish: return "fish"
+        case .legume: return "legume"
+        case .vegetable: return "carrot"
+        case .eggs: return "egg"
+        case .pastaRice: return "pasta"
+        case .other: return "questionmark.circle"
+        }
+    }
+    
+    var isCustomIcon: Bool {
+        switch self {
+        case .meat, .pastaRice: return true
+        default: return false
         }
     }
 }

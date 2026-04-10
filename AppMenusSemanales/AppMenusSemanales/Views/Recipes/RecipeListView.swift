@@ -32,10 +32,20 @@ struct RecipeListView: View {
                                     .font(.caption)
                                     .padding(5)
                                     .background(Color.orange.opacity(0.1))
-                                Text(recipe.category.icon + " " + recipe.category.rawValue)
-                                    .font(.caption)
-                                    .padding(5)
-                                    .background(Color.green.opacity(0.1))
+                                HStack(spacing: 4) {
+                                    if recipe.category.isCustomIcon {
+                                        Image(recipe.category.icon)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 14, height: 14)
+                                    } else {
+                                        Image(systemName: recipe.category.icon)
+                                    }
+                                    Text(recipe.category.rawValue)
+                                }
+                                .font(.caption)
+                                .padding(5)
+                                .background(Color.green.opacity(0.1))
                             }
                         }
                     }

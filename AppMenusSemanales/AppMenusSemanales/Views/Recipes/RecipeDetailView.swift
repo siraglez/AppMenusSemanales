@@ -29,10 +29,21 @@ struct RecipeDetailView: View {
                         .background(Color.orange.opacity(0.1))
                         .cornerRadius(8)
                     
-                    Label(recipe.category.icon + " " + recipe.category.rawValue, systemImage: "")
-                        .padding(8)
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(8)
+                    HStack(spacing: 4) {
+                        if recipe.category.isCustomIcon {
+                            Image(recipe.category.icon)           // asset propio
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 14, height: 14)
+                        } else {
+                            Image(systemName: recipe.category.icon)  // SF Symbol
+                        }
+                        Text(recipe.category.rawValue)
+                    }
+                    .font(.caption)
+                    .padding(8)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(8)
                 }
                 
                 if let calories = recipe.calories {
