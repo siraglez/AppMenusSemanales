@@ -54,7 +54,7 @@ enum RecipeCategory: String, CaseIterable, Codable, Identifiable {
     
     var isCustomIcon: Bool {
         switch self {
-        case .meat, .pastaRice: return true
+        case .meat, .pastaRice, .legume, .eggs: return true
         default: return false
         }
     }
