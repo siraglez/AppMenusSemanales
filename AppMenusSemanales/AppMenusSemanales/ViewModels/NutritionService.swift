@@ -88,8 +88,7 @@ class NutritionService {
                                   "pimiento", "zanahoria", "lechuga", "pepino", "puerro",
                                   "apio", "espárrago", "alcachofa", "verdura", "ensalada", "remolacha"])),
             (.eggs,      matches(["huevo", "tortilla", "clara", "yema"])),
-            (.pastaRice, matches(["pasta", "arroz", "macarrón", "espagueti", "fideos",
-                                  "lasaña", "cuscús", "quinoa", "risotto"]))
+            (.pastaRice, matches(["pasta", "arroz", "macarrón", "espagueti", "fideos", "lasaña", "cuscús", "quinoa", "risotto"]))
         ]
 
         // Si hay pasta o arroz, eso define la receta

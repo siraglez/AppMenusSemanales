@@ -266,21 +266,29 @@ struct WeeklyPlanView: View {
     
     func generateMenu(ignoreLastWeekRule: Bool = false) {
         let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
-
+        
+        // Comprobar si hay suficientes recetas ANTES de generar
+        // Si no las hay y el usuario aún no ha confirmado, mostrar el aviso
+        let candidates = allRecipes.filter { !excluded.contains($0.id) }
+        if candidates.count < 14 && !ignoreLastWeekRule {
+            showNotEnoughAlert = true
+            return  
+        }
+        
+        // Si el usuario pulsó "Generar igualmente" o hay suficientes recetas, generamos directamente
         let result = MenuGenerator.generateWeekMenu(
             recipes: allRecipes,
             forWeekOf: selectedDate,
             season: selectedSeason,
             excludedRecipeIDs: excluded
         )
-
         switch result {
         case .success(let newMenu):
-            deleteCurrentWeek()                                    // ← solo borra si hay éxito
+            deleteCurrentWeek()
             for dayPlan in newMenu { context.insert(dayPlan) }
-
-        case .failure(.notEnoughRecipes):
-            showNotEnoughAlert = true                              // ← el menú anterior se conserva
+        case .failure:
+            // Solo llegaría aquí si no hay ni una sola receta en la app
+            showNotEnoughAlert = true
         }
     }
     

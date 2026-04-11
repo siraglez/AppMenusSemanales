@@ -47,6 +47,20 @@ class MenuGenerator {
         if lunchPool.isEmpty  { lunchPool  = candidates.shuffled() }
         if dinnerPool.isEmpty { dinnerPool = candidates.shuffled() }
 
+        // Si no hay suficientes recetas, rellenamos repitiendo las disponibles
+        // (solo llega aquí si el usuario eligió "Generar igualmente")
+        while lunchPool.count < 7 {
+            guard !candidates.isEmpty else { return .failure(.notEnoughRecipes) }
+            lunchPool.append(contentsOf: candidates.filter {
+                $0.mealType == .lunch || $0.mealType == .both
+            }.shuffled())
+        }
+        while dinnerPool.count < 7 {
+            guard !candidates.isEmpty else { return .failure(.notEnoughRecipes) }
+            dinnerPool.append(contentsOf: candidates.filter {
+                $0.mealType == .dinner || $0.mealType == .both
+            }.shuffled())
+        }
         guard lunchPool.count >= 7, dinnerPool.count >= 7 else {
             return .failure(.notEnoughRecipes)
         }
@@ -96,16 +110,20 @@ class MenuGenerator {
 
     private static func pickBest(from pool: [Recipe], category: RecipeCategory,
                                   usedIDs: Set<UUID>, accumulated: NutritionInfo) -> Recipe? {
-        // Primero intentamos con la categoría correcta
+        // 1. Intentar con la categoría correcta y sin repetir
         let categoryMatches = pool.filter { !usedIDs.contains($0.id) && $0.category == category }
-
         if !categoryMatches.isEmpty {
             return pickByMacros(from: categoryMatches, accumulated: accumulated)
         }
 
-        // Fallback: cualquier receta no usada
+        // 2. Cualquier receta no usada
         let anyAvailable = pool.filter { !usedIDs.contains($0.id) }
-        return pickByMacros(from: anyAvailable, accumulated: accumulated)
+        if !anyAvailable.isEmpty {
+            return pickByMacros(from: anyAvailable, accumulated: accumulated)
+        }
+
+        // 3. Si no queda ninguna sin usar, permitir repetición
+        return pickByMacros(from: pool, accumulated: accumulated)
     }
 
     private static func pickByMacros(from candidates: [Recipe], accumulated: NutritionInfo) -> Recipe? {
