@@ -9,19 +9,48 @@
  
 import SwiftUI
  
-enum PreferenceWarning: Identifiable {
-    case allergen([String])      // Rojo   → alérgeno, no se debería ver (filtrado en el generador)
-    case intolerance([String])   // Naranja → intolerancia, adaptar la receta
-    case disliked([String])      // Amarillo → no gusta, aviso suave
+// MARK: - Diccionario de intolerancias
+// Relaciona cada intolerancia con los ingredientes que la contienen
+// Se usa tanto en PreferenceWarning (avisos visuales) como en MenuGenerator (filtro de alérgenos)
+let intoleranceIngredients: [String: [String]] = [
+    "lactosa":   ["leche", "queso", "nata", "mantequilla", "yogur", "crema",
+                  "lácteo", "lacteo", "mozzarella", "parmesano", "manchego",
+                  "gouda", "cheddar", "requesón", "cuajada", "bechamel",
+                  "lonchas", "rallado", "feta", "brie", "camembert"],
+    "gluten":    ["harina", "pan", "pasta", "trigo", "cebada", "centeno",
+                  "avena", "macarrón", "espagueti", "fideos", "lasaña",
+                  "galleta", "rebozado", "empanado", "sémola", "cuscús",
+                  "pita", "tortilla de trigo", "couscous"],
+    "fructosa":  ["manzana", "pera", "mango", "miel", "sirope", "agave",
+                  "fructosa", "zumo", "mermelada", "ketchup", "cebolla",
+                  "puerro", "espárrago", "alcachofa"],
+    "sorbitol":  ["ciruela", "melocotón", "albaricoque", "cereza", "nectarina",
+                  "manzana", "pera", "chicle", "caramelo", "menta"],
+    "histamina": ["atún", "sardina", "anchoas", "boquerones", "arenque",
+                  "embutido", "jamón", "chorizo", "salami", "salchichón",
+                  "bacon", "pepperoni", "vinagre", "tomate", "espinaca",
+                  "berenjena", "queso curado", "conserva", "marisco",
+                  "gambas", "langostino"],
+    "fodmap":    ["cebolla", "ajo", "puerro", "manzana", "pera", "miel",
+                  "leche", "yogur", "trigo", "centeno", "legumbre",
+                  "garbanzo", "lenteja", "alubia", "brócoli", "coliflor",
+                  "champiñón", "aguacate"]
+]
  
-    // Identifiable: usamos el mensaje como id único
+// MARK: - Enum PreferenceWarning
+ 
+enum PreferenceWarning: Identifiable {
+    case allergen([String])      // Rojo   → alérgeno, no debería aparecer en el menú
+    case intolerance([String])   // Naranja → intolerancia, adaptar la receta
+    case disliked([String])      // Gris   → no gusta, aviso suave
+ 
     var id: String { message }
  
     var color: Color {
         switch self {
         case .allergen:    return .red
         case .intolerance: return .orange
-        case .disliked:    return Color(red: 0.8, green: 0.6, blue: 0.0)
+        case .disliked:    return .secondary
         }
     }
  
@@ -46,30 +75,47 @@ enum PreferenceWarning: Identifiable {
 }
  
 // MARK: - Función global para calcular los avisos de una receta
-// Se llama desde WeeklyPlanView pasando las preferencias del usuario
+ 
 func preferenceWarnings(for recipe: Recipe, preferences: UserPreferences?) -> [PreferenceWarning] {
     guard let prefs = preferences else { return [] }
  
     let ingredientNames = recipe.ingredients.map { $0.name.lowercased() }
     var result: [PreferenceWarning] = []
  
-    // 1. Alergias
+    // 1. ALERGIAS — búsqueda directa de la palabra en el nombre del ingrediente
+    //  (las alergias también usan el diccionario en MenuGenerator para filtrarlas antes de generar, pero si por algún motivo llegan al menú, se avisa aquí)
     let allergenMatches = prefs.allergies.filter { allergen in
-        ingredientNames.contains { $0.contains(allergen.lowercased()) }
+        let key = allergen.lowercased()
+        // Primero intenta con el diccionario de intolerancias (cubre ingredientes relacionados)
+        if let related = intoleranceIngredients[key] {
+            return ingredientNames.contains { name in
+                related.contains { name.contains($0) }
+            }
+        }
+        // Si no está en el diccionario, búsqueda directa
+        return ingredientNames.contains { $0.contains(key) }
     }
     if !allergenMatches.isEmpty {
         result.append(.allergen(allergenMatches))
     }
  
-    // 2. Intolerancias
+    // 2. INTOLERANCIAS — usa el diccionario para detectar ingredientes relacionados
     let intoleranceMatches = prefs.intolerances.filter { intolerance in
-        ingredientNames.contains { $0.contains(intolerance.lowercased()) }
+        let key = intolerance.lowercased()
+        if let related = intoleranceIngredients[key] {
+            // Comprueba si algún ingrediente de la receta está en la lista de relacionados
+            return ingredientNames.contains { name in
+                related.contains { name.contains($0) }
+            }
+        }
+        // Si la intolerancia no está en el diccionario, búsqueda directa
+        return ingredientNames.contains { $0.contains(key) }
     }
     if !intoleranceMatches.isEmpty {
         result.append(.intolerance(intoleranceMatches))
     }
  
-    // 3. Preferencias (no le gusta)
+    // 3. PREFERENCIAS (no me gusta) — búsqueda directa
     let dislikeMatches = prefs.dislikes.filter { dislike in
         ingredientNames.contains { $0.contains(dislike.lowercased()) }
     }
@@ -79,3 +125,4 @@ func preferenceWarnings(for recipe: Recipe, preferences: UserPreferences?) -> [P
  
     return result
 }
+ 
