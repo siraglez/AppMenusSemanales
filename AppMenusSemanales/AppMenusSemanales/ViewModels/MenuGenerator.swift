@@ -5,6 +5,11 @@
 //  Created by Sira Gonzalez-Madroño on 13/2/26.
 //
 // Algoritmo inteligente con patrón mediterráneo y optimización de macros
+//
+//  - generateWeekMenu acepta un parámetro opcional `preferences: UserPreferences?`
+//  - Antes de generar, filtra las recetas que contengan ALÉRGENOS del usuario
+//    (las recetas con intolerancias o alimentos no deseados NO se filtran aquí,
+//     se muestran con avisos en WeeklyPlanView)
 
 import Foundation
 import SwiftData
@@ -24,7 +29,8 @@ class MenuGenerator {
         recipes: [Recipe],
         forWeekOf date: Date,
         season: Season = .all,
-        excludedRecipeIDs: Set<UUID> = []
+        excludedRecipeIDs: Set<UUID> = [],
+        preferences: UserPreferences? = nil
     ) -> Result<[WeeklyMenu], MenuGenerationError> {
 
         let days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -36,11 +42,28 @@ class MenuGenerator {
             season == .all || $0.season == season || $0.season == .all
         }
         if available.isEmpty { available = recipes }
+        
+        // 2. Filtrar recetas con ALÉRGENOS del usuario
+        // Las recetas con intolerancias o dislikes NO se filtran aquí,
+        // se muestran con avisos visuales en WeeklyPlanView
+        if let prefs = preferences, !prefs.allergies.isEmpty {
+            let safeRecipes = available.filter { recipe in
+                !recipe.ingredients.contains { ingredient in
+                    prefs.allergies.contains { allergen in
+                        ingredient.name.lowercased().contains(allergen.lowercased())
+                    }
+                }
+            }
+            // Solo aplicamos el filtro si quedan recetas suficientes
+            if !safeRecipes.isEmpty {
+                available = safeRecipes
+            }
+        }
 
-        // 2. Excluir recetas de la semana anterior
+        // 3. Excluir recetas de la semana anterior
         let candidates = available.filter { !excludedRecipeIDs.contains($0.id) }
 
-        // 3. Separar por tipo de comida y mezclar
+        // 4. Separar por tipo de comida y mezclar
         var lunchPool  = candidates.filter { $0.mealType == .lunch  || $0.mealType == .both }.shuffled()
         var dinnerPool = candidates.filter { $0.mealType == .dinner || $0.mealType == .both }.shuffled()
 
@@ -65,7 +88,7 @@ class MenuGenerator {
             return .failure(.notEnoughRecipes)
         }
 
-        // 4. Seleccionar recetas siguiendo el patrón + optimización de macros
+        // 5. Seleccionar recetas siguiendo el patrón + optimización de macros
         var usedIDs = Set<UUID>()
         var accumulated = NutritionInfo()
         var lunches: [Recipe] = []
@@ -91,7 +114,7 @@ class MenuGenerator {
             accumulated.add(recipe)
         }
 
-        // 5. Construir el menú día a día
+        // 6. Construir el menú día a día
         let startOfWeek = calendar.date(
             from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         ) ?? date

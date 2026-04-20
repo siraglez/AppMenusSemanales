@@ -19,6 +19,8 @@ struct WeeklyPlanView: View {
     // 3. Traer TODAS las recetas para que el generador pueda elegir
     @Query var allRecipes: [Recipe]
     
+    @Query var userPreferences: [UserPreferences]
+    
     @Binding var selectedTab: Int
     
     @State private var selectedDate = Date()
@@ -28,6 +30,9 @@ struct WeeklyPlanView: View {
     
     // Para ordenar los días correctamente siempre
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    
+    // Acceso conveniente a las preferencias (solo hay un objeto en la BD)
+        var preferences: UserPreferences? { userPreferences.first }
     
     var body: some View {
         NavigationStack {
@@ -190,6 +195,38 @@ struct WeeklyPlanView: View {
         .listStyle(.insetGrouped)
     }
     
+    // Fila de receta con avisos de preferencias debajo del nombre
+        @ViewBuilder
+        func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
+            HStack(alignment: .top) {
+                Image(systemName: icon)
+                    .foregroundStyle(iconColor)
+                    .font(.title3)
+                    .frame(width: 30)
+                    .padding(.top, 2)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mealLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Text(recipe.name)
+                        .fontWeight(.medium)
+                    
+                    // Calculamos los avisos usando la función de PreferenceWarning.swift
+                    // - Rojo:    alérgeno (no debería aparecer, pero por seguridad se muestra)
+                    // - Naranja: intolerancia → adaptar receta
+                    // - Gris:    alimento que no gusta → aviso suave
+                    let warnings = preferenceWarnings(for: recipe, preferences: preferences)
+                    ForEach(warnings) { warning in
+                        Label(warning.message, systemImage: warning.icon)
+                            .font(.caption2)
+                            .foregroundStyle(warning.color)
+                    }
+                }
+            }
+        }
+    
     var emptyStateView: some View {
         ContentUnavailableView {
             Label("Semana libre", systemImage: "calendar")
@@ -280,7 +317,8 @@ struct WeeklyPlanView: View {
             recipes: allRecipes,
             forWeekOf: selectedDate,
             season: selectedSeason,
-            excludedRecipeIDs: excluded
+            excludedRecipeIDs: excluded,
+            preferences: preferences
         )
         switch result {
         case .success(let newMenu):
