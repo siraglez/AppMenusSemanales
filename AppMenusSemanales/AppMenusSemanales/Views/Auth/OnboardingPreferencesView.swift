@@ -2,7 +2,7 @@
 //  OnboardingPreferencesView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira González-Madroño on 20/4/26.
+//  Created by Sira González-Madroño
 //
 //  Pantalla que aparece UNA SOLA VEZ justo después del registro.
 //  Permite al usuario configurar sus alergias/intolerancias/preferencias

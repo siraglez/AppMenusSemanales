@@ -2,7 +2,7 @@
 //  ExtraItem.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 17/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 
 // Para poder agregar otros elementos a la lista de la compra a parte de lo automático

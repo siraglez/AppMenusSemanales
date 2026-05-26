@@ -2,7 +2,7 @@
 //  NutritionService.swift
 //  AppMenusSemanales
 //
-//  Created by Sira González-Madroño on 22/3/26.
+//  Created by Sira González-Madroño 
 //
 // Llama a la API de USDA para calcular el valor nutricional de una receta
 

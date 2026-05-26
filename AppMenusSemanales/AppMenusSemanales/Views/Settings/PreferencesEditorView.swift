@@ -2,7 +2,7 @@
 //  PreferencesEditorView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira González-Madroño on 20/4/26.
+//  Created by Sira González-Madroño 
 //
 //  Vista reutilizable para editar alergias, intolerancias y preferencias.
 //  Se usa tanto en el onboarding (primera vez) como en la pantalla de Perfil.

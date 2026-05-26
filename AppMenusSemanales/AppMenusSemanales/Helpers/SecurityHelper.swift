@@ -2,7 +2,7 @@
 //  SecurityHelper.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 15/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 
 // Encriptación de contraseña

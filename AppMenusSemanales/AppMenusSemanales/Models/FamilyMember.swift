@@ -2,7 +2,7 @@
 //  FamilyMember.swift
 //  AppMenusSemanales
 //
-//  Created by Sira González-Madroño on 20/4/26.
+//  Created by Sira González-Madroño 
 //
 
 import Foundation

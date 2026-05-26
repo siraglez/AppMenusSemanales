@@ -2,7 +2,7 @@
 //  RegisterView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 15/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 
 // Pantalla de registro al iniciar la aplicación

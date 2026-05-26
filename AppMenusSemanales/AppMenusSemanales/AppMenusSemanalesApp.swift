@@ -2,7 +2,7 @@
 //  AppMenusSemanalesApp.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 13/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 // El arranque de la app
 //
@@ -10,8 +10,8 @@
 //  ┌─────────────────────────────────────────────────────┐
 //  │ ¿isLoggedIn?                                        │
 //  │   NO  → LoginView                                   │
-//  │   SÍ  → ¿needsPreferencesSetup?                    │
-//  │           SÍ → OnboardingPreferencesView (1ª vez)  │
+//  │   SÍ  → ¿needsPreferencesSetup?                     │
+//  │           SÍ → OnboardingPreferencesView (1ª vez)   │
 //  │           NO → ContentView (app normal)             │
 //  └─────────────────────────────────────────────────────┘
 //

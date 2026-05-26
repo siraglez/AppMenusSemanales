@@ -2,7 +2,7 @@
 //  PreferenceWarning.swift
 //  AppMenusSemanales
 //
-//  Created by Sira González-Madroño on 20/4/26.
+//  Created by Sira González-Madroño 
 //
 //  Define los tres tipos de aviso que puede generar una receta según las preferencias del usuario.
 //  Se usa en WeeklyPlanView para mostrar los avisos en las tarjetas del menú.

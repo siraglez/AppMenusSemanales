@@ -2,7 +2,7 @@
 //  Ingredient.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 16/2/26.
+//  Created by Sira Gonzalez-Madroño
 //
 
 // Para poder poner cantidades en los ingredientes

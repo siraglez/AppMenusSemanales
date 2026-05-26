@@ -2,7 +2,7 @@
 //  ShoppingListView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 16/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 
 // Vista para la lista de la compra

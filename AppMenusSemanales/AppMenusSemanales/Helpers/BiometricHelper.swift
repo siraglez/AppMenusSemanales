@@ -2,7 +2,7 @@
 //  BiometricHelper.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 15/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 
 // Para poder usar Face ID para iniciar sesión una vez tengas cuenta

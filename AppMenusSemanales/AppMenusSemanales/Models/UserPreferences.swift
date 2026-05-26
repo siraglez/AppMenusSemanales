@@ -2,7 +2,7 @@
 //  UserPreferences.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 13/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 // Modelo para guardar alergias, intolerancias y preferencias del usuario
 //

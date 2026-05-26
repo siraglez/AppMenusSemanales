@@ -2,7 +2,7 @@
 //  RecipeDetailView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño on 13/2/26.
+//  Created by Sira Gonzalez-Madroño 
 //
 // Ver los detalles de las recetas de la lista al pinchar en ellas
 
