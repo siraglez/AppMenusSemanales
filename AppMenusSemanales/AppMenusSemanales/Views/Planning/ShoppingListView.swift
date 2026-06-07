@@ -2,7 +2,7 @@
 //  ShoppingListView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño 
+//  Created by Sira Gonzalez-Madroño
 //
 
 // Vista para la lista de la compra
@@ -25,7 +25,7 @@ struct ShoppingListView: View {
     @State private var isCompletedExpanded: Bool = false
     @State private var showAddSheet: Bool = false // Para mostrar el formulario
     
-    // MARK: CÁLCULO INTELIGENTE DE LA LISTA 
+    // MARK: CÁLCULO INTELIGENTE DE LA LISTA
     
     var fullShoppingList: [IngredientGroup] {
         var totals: [String: (Double, String, Bool)] = [:] // Bool indica si es borrable (manual)
@@ -36,8 +36,17 @@ struct ShoppingListView: View {
         let menus = allMenus.filter { calendar.component(.weekOfYear, from: $0.date) == weekOfYear }
         
         for menu in menus {
-            for ing in menu.lunch.ingredients { addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false) }
-            for ing in menu.dinner.ingredients { addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false) }
+            // Solo sumamos los ingredientes si la receta sigue existiendo (no es nil)
+            if let lunch = menu.lunch {
+                for ing in lunch.ingredients {
+                    addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false)
+                }
+            }
+            if let dinner = menu.dinner {
+                for ing in dinner.ingredients {
+                    addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false)
+                }
+            }
         }
         
         // 2. Sumar ítems MANUALES (Extra)
@@ -84,7 +93,7 @@ struct ShoppingListView: View {
                         Section(header: Text("Pendiente (\(pendingItems.count))")) {
                             ForEach(pendingItems) { item in
                                 ShoppingRow(item: item, isChecked: false) { toggleItem(item.name) }
-                                    // Solo permitimos borrar si es manual (Swipe to delete)
+                                // Solo permitimos borrar si es manual (Swipe to delete)
                                     .swipeActions {
                                         if item.isManual {
                                             Button("Borrar", role: .destructive) { deleteManualItem(name: item.name) }
@@ -93,7 +102,7 @@ struct ShoppingListView: View {
                             }
                         }
                     } else if !completedItems.isEmpty {
-                         Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green) }
+                        Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green) }
                     }
                     
                     // SECCIÓN COMPLETADOS

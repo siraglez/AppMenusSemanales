@@ -12,6 +12,9 @@ import SwiftData
 struct RecipeListView: View {
     // @Query lee la base de datos y actualiza la lista sola
     @Query(sort: \Recipe.name) var recipes: [Recipe]
+    
+    @Query var allMenus: [WeeklyMenu]
+    
     @Environment(\.modelContext) var context
     
     @State private var showAddSheet = false
@@ -40,6 +43,15 @@ struct RecipeListView: View {
                 }
                 .onDelete { indexSet in
                     for index in indexSet {
+                        let recipeToDelete = recipes[index]
+                        
+                        //Quitar la receta de cualquier menú que la use (dejar el hueco vacío)
+                        for menu in allMenus {
+                            if menu.lunch?.id == recipeToDelete.id { menu.lunch = nil }
+                            if menu.dinner?.id == recipeToDelete.id { menu.dinner = nil }
+                        }
+                        
+                        // Ahora ya es seguro borrar la receta
                         context.delete(recipes[index])
                     }
                 }

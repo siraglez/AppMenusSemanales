@@ -14,8 +14,9 @@ class WeeklyMenu {
     var id: UUID
     var dayName: String // Lunes, Martes...
     var date: Date // Para saber de qué semana es
-    var lunch: Recipe
-    var dinner: Recipe
+    
+    @Relationship(deleteRule: .nullify) var lunch: Recipe?
+    @Relationship(deleteRule: .nullify) var dinner: Recipe?
     
     init(dayName: String, date: Date, lunch: Recipe, dinner: Recipe) {
         self.id = UUID()
