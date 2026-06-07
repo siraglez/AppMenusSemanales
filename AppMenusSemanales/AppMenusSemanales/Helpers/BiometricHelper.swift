@@ -5,7 +5,7 @@
 //  Created by Sira Gonzalez-Madroño 
 //
 
-// Para poder usar Face ID para iniciar sesión una vez tengas cuenta
+// Para poder usar Face ID / Touch ID para iniciar sesión una vez tengas cuenta
 
 import Foundation
 import LocalAuthentication

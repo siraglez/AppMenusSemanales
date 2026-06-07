@@ -2,7 +2,7 @@
 //  WeeklyPlanView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño 
+//  Created by Sira Gonzalez-Madroño
 //
 // Pantalla principal del menú semanal
 
@@ -32,7 +32,7 @@ struct WeeklyPlanView: View {
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
     // Acceso conveniente a las preferencias (solo hay un objeto en la BD)
-        var preferences: UserPreferences? { userPreferences.first }
+    var preferences: UserPreferences? { userPreferences.first }
     
     var body: some View {
         NavigationStack {
@@ -44,7 +44,7 @@ struct WeeklyPlanView: View {
                 
                 // --- 2. Lista o Mensaje vacío ---
                 if currentWeekMenu.isEmpty {
-                    emptyStateView 
+                    emptyStateView
                 } else {
                     menuListView
                 }
@@ -77,7 +77,7 @@ struct WeeklyPlanView: View {
                     selectedTab = 1
                 }
                 Button("Generar igualmente") {
-                    generateMenu(ignoreLastWeekRule: true)   
+                    generateMenu(ignoreLastWeekRule: true)
                 }
                 Button("Cancelar", role: .cancel) { }
             } message: {
@@ -144,40 +144,16 @@ struct WeeklyPlanView: View {
         List {
             ForEach(currentWeekMenu) { dailyPlan in
                 Section {
-                    // Fila comida
+                    // Fila comida (usa recipeRow para mostrar los avisos de preferencias)
                     NavigationLink(destination: RecipeDetailView(recipe: dailyPlan.lunch)) {
-                        HStack {
-                            Image(systemName: "sun.max.fill")
-                                .foregroundStyle(.orange)
-                                .font(.title3)
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading) {
-                                Text("Comida")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(dailyPlan.lunch.name)
-                                    .fontWeight(.medium)
-                            }
-                        }
+                        recipeRow(recipe: dailyPlan.lunch, mealLabel: "Comida",
+                                  icon: "sun.max.fill", iconColor: .orange)
                     }
                     
-                    // Fila cena
+                    // Fila cena (usa recipeRow para mostrar los avisos de preferencias)
                     NavigationLink(destination: RecipeDetailView(recipe: dailyPlan.dinner)) {
-                        HStack {
-                            Image(systemName: "moon.fill")
-                                .foregroundStyle(.purple)
-                                .font(.title3)
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading) {
-                                Text("Cena")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(dailyPlan.dinner.name)
-                                    .fontWeight(.medium)
-                            }
-                        }
+                        recipeRow(recipe: dailyPlan.dinner, mealLabel: "Cena",
+                                  icon: "moon.fill", iconColor: .purple)
                     }
                 } header: {
                     // Cabecera del día
@@ -196,36 +172,36 @@ struct WeeklyPlanView: View {
     }
     
     // Fila de receta con avisos de preferencias debajo del nombre
-        @ViewBuilder
-        func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
-            HStack(alignment: .top) {
-                Image(systemName: icon)
-                    .foregroundStyle(iconColor)
-                    .font(.title3)
-                    .frame(width: 30)
-                    .padding(.top, 2)
+    @ViewBuilder
+    func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
+        HStack(alignment: .top) {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .font(.title3)
+                .frame(width: 30)
+                .padding(.top, 2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(mealLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(mealLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(recipe.name)
-                        .fontWeight(.medium)
-                    
-                    // Calculamos los avisos usando la función de PreferenceWarning.swift
-                    // - Rojo:    alérgeno (no debería aparecer, pero por seguridad se muestra)
-                    // - Naranja: intolerancia → adaptar receta
-                    // - Gris:    alimento que no gusta → aviso suave
-                    let warnings = preferenceWarnings(for: recipe, preferences: preferences)
-                    ForEach(warnings) { warning in
-                        Label(warning.message, systemImage: warning.icon)
-                            .font(.caption2)
-                            .foregroundStyle(warning.color)
-                    }
+                Text(recipe.name)
+                    .fontWeight(.medium)
+                
+                // Calculamos los avisos usando la función de PreferenceWarning.swift
+                // - Rojo:    alérgeno (no debería aparecer, pero por seguridad se muestra)
+                // - Naranja: intolerancia → adaptar receta
+                // - Gris:    alimento que no gusta → aviso suave
+                let warnings = preferenceWarnings(for: recipe, preferences: preferences)
+                ForEach(warnings) { warning in
+                    Label(warning.message, systemImage: warning.icon)
+                        .font(.caption2)
+                        .foregroundStyle(warning.color)
                 }
             }
         }
+    }
     
     var emptyStateView: some View {
         ContentUnavailableView {
@@ -254,7 +230,7 @@ struct WeeklyPlanView: View {
     
     // MARK: - Funciones Auxiliares
     
-    // IDs de las recetas usadas la semana anterior (para la regla de 15 días)
+    // IDs de las recetas usadas la semana anterior (para evitar repeticiones)
     var lastWeekExcludedIDs: Set<UUID> {
         let calendar = Calendar.current
         guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedDate) else { return [] }
@@ -309,7 +285,7 @@ struct WeeklyPlanView: View {
         let candidates = allRecipes.filter { !excluded.contains($0.id) }
         if candidates.count < 14 && !ignoreLastWeekRule {
             showNotEnoughAlert = true
-            return  
+            return
         }
         
         // Si el usuario pulsó "Generar igualmente" o hay suficientes recetas, generamos directamente

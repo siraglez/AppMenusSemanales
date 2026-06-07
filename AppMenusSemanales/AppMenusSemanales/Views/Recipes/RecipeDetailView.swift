@@ -14,6 +14,10 @@ struct RecipeDetailView: View {
     @Environment(\.modelContext) var context
     @Environment(\.dismiss) var dismiss
     @State private var showEditSheet = false
+
+    // Preferencias del usuario para mostrar avisos en el detalle
+    @Query var userPreferences: [UserPreferences]
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -44,6 +48,24 @@ struct RecipeDetailView: View {
                     .padding(8)
                     .background(Color.green.opacity(0.1))
                     .cornerRadius(8)
+                }
+
+                // Avisos de preferencias (alergia / intolerancia / no me gusta)
+                // Se calculan con la función de PreferenceWarning.swift y se muestran
+                // en recuadros de color: rojo (alérgeno), naranja (adaptar), gris (no gusta)
+                let warnings = preferenceWarnings(for: recipe, preferences: userPreferences.first)
+                if !warnings.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(warnings) { warning in
+                            Label(warning.message, systemImage: warning.icon)
+                                .font(.caption)
+                                .foregroundStyle(warning.color)
+                                .padding(8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(warning.color.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                    }
                 }
                 
                 if let calories = recipe.calories {

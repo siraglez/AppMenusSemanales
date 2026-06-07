@@ -90,14 +90,14 @@ class NutritionService {
             (.eggs,      matches(["huevo", "tortilla", "clara", "yema"])),
             (.pastaRice, matches(["pasta", "arroz", "macarrón", "espagueti", "fideos", "lasaña", "cuscús", "quinoa", "risotto"]))
         ]
-
+        
+        // Si hay legumbres, eso define la receta
+        if let legumeScore = scores.first(where: { $0.0 == .legume }), legumeScore.1 > 0 {
+            return .legume
+        }
         // Si hay pasta o arroz, eso define la receta
         if let pastaScore = scores.first(where: { $0.0 == .pastaRice }), pastaScore.1 > 0 {
             return .pastaRice
-        }
-        // Si hay legy¡umbres, eso define la receta
-        if let legumeScore = scores.first(where: { $0.0 == .legume }), legumeScore.1 > 0 {
-            return .legume
         }
         // Para el resto, la categoría con más coincidencias gana
         if let best = scores.max(by: { $0.1 < $1.1 }), best.1 > 0 {

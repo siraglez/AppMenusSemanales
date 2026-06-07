@@ -2,7 +2,7 @@
 //  ProfileView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño 
+//  Created by Sira Gonzalez-Madroño
 //
 // Pantalla de perfil del usuario con ajustes
 //

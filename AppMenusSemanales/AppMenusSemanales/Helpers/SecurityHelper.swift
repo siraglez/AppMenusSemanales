@@ -5,7 +5,7 @@
 //  Created by Sira Gonzalez-Madroño 
 //
 
-// Encriptación de contraseña
+// Encriptación de contraseña con SHA-256
 
 import Foundation
 import CryptoKit
