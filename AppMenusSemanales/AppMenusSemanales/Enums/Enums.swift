@@ -4,7 +4,7 @@
 //
 //  Created by Sira Gonzalez-Madroño 
 //
-// Para definir el tipo de comida y las estaciones
+// Para definir el tipo de comida, las estaciones, la categoría y la disponibilidad semanal
 
 
 import Foundation
@@ -28,7 +28,7 @@ enum Season: String, CaseIterable, Codable, Identifiable {
     var id: String { self.rawValue }
 }
 
-// Definir el tipo de comida
+// Definir la categoría de la receta
 enum RecipeCategory: String, CaseIterable, Codable, Identifiable {
     case meat = "Carne"
     case fish = "Pescado"
@@ -58,4 +58,13 @@ enum RecipeCategory: String, CaseIterable, Codable, Identifiable {
         default: return false
         }
     }
+}
+
+// Permite marcar si una receta se puede hacer cualquier día, solo entre semana o solo en fin de semana
+enum WeekAvailability: String, CaseIterable, Codable, Identifiable {
+    case any = "Cualquier día"
+    case weekday = "Entre semana"
+    case weekend = "Fin de semana"
+    
+    var id: String { self.rawValue }
 }

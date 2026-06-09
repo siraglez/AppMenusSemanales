@@ -20,6 +20,7 @@ struct AddRecipeView: View {
     @State private var instructions: String = ""
     @State private var selectedSeason: Season = .all
     @State private var selectedMealType: MealType = .lunch
+    @State private var selectedAvailability: WeekAvailability = .any
     
     @State private var isCalculatingNutrition = false
     @State private var translationConfig: TranslationSession.Configuration?
@@ -175,6 +176,7 @@ struct AddRecipeView: View {
             recipe.instructions = instructions
             recipe.mealType = selectedMealType
             recipe.season = selectedSeason
+            recipe.weekAvailability = selectedAvailability
             recipe.ingredients = tempIngredients
             recipe.calories = nutrition.calories
             recipe.proteins = nutrition.proteins
@@ -189,6 +191,7 @@ struct AddRecipeView: View {
                 mealType: selectedMealType,
                 season: selectedSeason
             )
+            newRecipe.weekAvailability = selectedAvailability
             newRecipe.calories = nutrition.calories
             newRecipe.proteins = nutrition.proteins
             newRecipe.carbs    = nutrition.carbs

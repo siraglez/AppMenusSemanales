@@ -16,10 +16,13 @@ class Recipe {
     var name: String
     var instructions: String
     @Relationship(deleteRule: .cascade) var ingredients: [Ingredient] = []
-    var mealTypeRaw: String // Se guardará el valor 'raw' del Enum
-    var seasonRaw: String // Se guardará el valor 'raw' del Enum
-    var imageData: Data? // Para guardar foto en el futuro
+    var mealTypeRaw: String
+    var seasonRaw: String
     var categoryRaw: String
+    
+    // Disponibilidad semanal
+    var weekAvailabilityRaw: String = WeekAvailability.any.rawValue
+    
     // Datos nutricionales
     var calories: Double?
     var proteins: Double?
@@ -42,6 +45,11 @@ class Recipe {
         set { categoryRaw = newValue.rawValue }
     }
     
+    var weekAvailability: WeekAvailability {
+        get { WeekAvailability(rawValue: weekAvailabilityRaw) ?? .any }
+        set { weekAvailabilityRaw = newValue.rawValue }
+    }
+    
     init(name: String, ingredients: [Ingredient] = [], instructions: String = "", mealType: MealType = .lunch, season: Season = .all) {
         self.id = UUID()
         self.name = name
@@ -50,5 +58,6 @@ class Recipe {
         self.mealTypeRaw = mealType.rawValue
         self.seasonRaw = season.rawValue
         self.categoryRaw = RecipeCategory.other.rawValue
+        self.weekAvailabilityRaw = WeekAvailability.any.rawValue
     }
 }

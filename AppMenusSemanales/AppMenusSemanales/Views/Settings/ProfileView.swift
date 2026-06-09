@@ -11,7 +11,7 @@
 
 import SwiftUI
 import SwiftData
- 
+
 struct ProfileView: View {
     @Query var users: [UserProfile]
     @Environment(\.modelContext) var context
@@ -38,6 +38,16 @@ struct ProfileView: View {
                             .navigationBarTitleDisplayMode(.inline)
                         ) {
                             Label("Alergias, intolerancias y gustos", systemImage: "heart.text.square")
+                        }
+                    }
+                    
+                    // ── Recetas fijas ──
+                    Section("Recetas Fijas") {
+                        NavigationLink(destination: FixedRecipesEditorView()
+                            .navigationTitle("Recetas Fijas")
+                            .navigationBarTitleDisplayMode(.inline)
+                        ) {
+                            Label("Recetas fijas por día", systemImage: "pin")
                         }
                     }
                     

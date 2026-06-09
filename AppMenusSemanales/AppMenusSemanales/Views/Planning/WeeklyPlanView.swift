@@ -20,6 +20,7 @@ struct WeeklyPlanView: View {
     @Query var allRecipes: [Recipe]
     
     @Query var userPreferences: [UserPreferences]
+    @Query var fixedAssignments: [FixedAssignment]
     
     @Binding var selectedTab: Int
     
@@ -27,6 +28,7 @@ struct WeeklyPlanView: View {
     @State private var showRegenerateAlert = false
     @State private var selectedSeason: Season = .all
     @State private var showNotEnoughAlert = false
+    @State private var showAvailabilityAlert = false
     
     // Para ordenar los días correctamente siempre
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -51,7 +53,6 @@ struct WeeklyPlanView: View {
             }
             .navigationTitle("Plan Semanal")
             .toolbar {
-                // Menú de opciones (Tres puntitos)
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(role: .destructive, action: deleteCurrentWeek) {
@@ -65,30 +66,32 @@ struct WeeklyPlanView: View {
                     }
                 }
             }
-            // Alerta para confirmar regeneración
             .alert("¿Crear nuevo menú?", isPresented: $showRegenerateAlert) {
                 Button("Cancelar", role: .cancel) { }
                 Button("Sí, crear", action: { generateMenu() })
             } message: {
                 Text("Esto borrará el menú actual de esta semana y creará uno nuevo.")
             }
+            // Aviso de pocas recetas para no repetir
             .alert("Pocas recetas disponibles", isPresented: $showNotEnoughAlert) {
-                Button("Ir a añadir recetas") {
-                    selectedTab = 1
-                }
-                Button("Generar igualmente") {
-                    generateMenu(ignoreLastWeekRule: true)
-                }
+                Button("Ir a añadir recetas") { selectedTab = 1 }
+                Button("Generar igualmente") { generateMenu(ignoreLastWeekRule: true) }
                 Button("Cancelar", role: .cancel) { }
             } message: {
                 Text("Necesitas al menos 14 recetas distintas (sin contar las de la semana anterior) para evitar repeticiones. Puedes añadir más recetas o generar el menú ignorando esa restricción.")
+            }
+            // Aviso de disponibilidad entre semana / fin de semana
+            .alert("Pocas recetas para la disponibilidad", isPresented: $showAvailabilityAlert) {
+                Button("Ir a añadir recetas") { selectedTab = 1 }
+                Button("Generar igualmente") { generateMenu(ignoreLastWeekRule: true, ignoreAvailability: true) }
+                Button("Cancelar", role: .cancel) { }
+            } message: {
+                Text("No hay suficientes recetas marcadas como 'entre semana' o 'fin de semana' para cubrir todos los días respetando esa preferencia. Puedes añadir más recetas, o generar el menú usando recetas de fin de semana entre semana (o viceversa).")
             }
         }
     }
     
     // MARK: - Lógica de Filtrado y Orden
-    
-    // Filtrar los menús para mostrar SOLO los de la semana seleccionada
     var currentWeekMenu: [WeeklyMenu] {
         let calendar = Calendar.current
         let weekOfYear = calendar.component(.weekOfYear, from: selectedDate)
@@ -100,7 +103,6 @@ struct WeeklyPlanView: View {
             return menuWeek == weekOfYear && menuYear == year
         }
         
-        // Ordenar de Lunes a Domingo
         return menus.sorted { (menu1, menu2) -> Bool in
             guard let index1 = daysOrder.firstIndex(of: menu1.dayName),
                   let index2 = daysOrder.firstIndex(of: menu2.dayName) else {
@@ -111,244 +113,225 @@ struct WeeklyPlanView: View {
     }
     
     // MARK: - Componentes Visuales
-        
-        var weekHeaderControl: some View {
-            HStack {
-                Button(action: { moveWeek(by: -1) }) {
-                    Image(systemName: "chevron.left.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.gray)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Text(weekLabel)
-                        .font(.headline)
-                    Text(dateRangeLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                Button(action: { moveWeek(by: 1) }) {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.blue)
-                }
+    var weekHeaderControl: some View {
+        HStack {
+            Button(action: { moveWeek(by: -1) }) {
+                Image(systemName: "chevron.left.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.gray)
+            }
+            Spacer()
+            VStack {
+                Text(weekLabel).font(.headline)
+                Text(dateRangeLabel).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(action: { moveWeek(by: 1) }) {
+                Image(systemName: "chevron.right.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.blue)
             }
         }
-        
-        var menuListView: some View {
-            List {
-                ForEach(currentWeekMenu) { dailyPlan in
-                    Section {
-                        // Fila comida: si la receta existe, navegable; si no, hueco vacío
-                        if let lunch = dailyPlan.lunch {
-                            NavigationLink(destination: RecipeDetailView(recipe: lunch)) {
-                                recipeRow(recipe: lunch, mealLabel: "Comida",
-                                          icon: "sun.max.fill", iconColor: .orange)
-                            }
-                        } else {
-                            emptySlotRow(mealLabel: "Comida", icon: "sun.max.fill", iconColor: .orange)
+    }
+    
+    var menuListView: some View {
+        List {
+            ForEach(currentWeekMenu) { dailyPlan in
+                Section {
+                    // Fila comida: si la receta existe, navegable; si no, hueco vacío
+                    if let lunch = dailyPlan.lunch {
+                        NavigationLink(destination: RecipeDetailView(recipe: lunch)) {
+                            recipeRow(recipe: lunch, mealLabel: "Comida",
+                                      icon: "sun.max.fill", iconColor: .orange)
                         }
-                        
-                        // Fila cena: igual que la comida
-                        if let dinner = dailyPlan.dinner {
-                            NavigationLink(destination: RecipeDetailView(recipe: dinner)) {
-                                recipeRow(recipe: dinner, mealLabel: "Cena",
-                                          icon: "moon.fill", iconColor: .purple)
-                            }
-                        } else {
-                            emptySlotRow(mealLabel: "Cena", icon: "moon.fill", iconColor: .purple)
+                    } else {
+                        emptySlotRow(mealLabel: "Comida", icon: "sun.max.fill", iconColor: .orange)
+                    }
+                    
+                    // Fila cena
+                    if let dinner = dailyPlan.dinner {
+                        NavigationLink(destination: RecipeDetailView(recipe: dinner)) {
+                            recipeRow(recipe: dinner, mealLabel: "Cena",
+                                      icon: "moon.fill", iconColor: .purple)
                         }
-                    } header: {
-                        // Cabecera del día
-                        HStack {
-                            Text(dailyPlan.dayName)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Text(dailyPlan.date.formatted(.dateTime.day().month()))
-                                .font(.caption)
-                        }
+                    } else {
+                        emptySlotRow(mealLabel: "Cena", icon: "moon.fill", iconColor: .purple)
+                    }
+                } header: {
+                    HStack {
+                        Text(dailyPlan.dayName)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(dailyPlan.date.formatted(.dateTime.day().month()))
+                            .font(.caption)
                     }
                 }
             }
-            .listStyle(.insetGrouped)
         }
-        
-        // Fila de receta con avisos de preferencias debajo del nombre
-        @ViewBuilder
-        func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
-            HStack(alignment: .top) {
-                Image(systemName: icon)
-                    .foregroundStyle(iconColor)
-                    .font(.title3)
-                    .frame(width: 30)
-                    .padding(.top, 2)
+        .listStyle(.insetGrouped)
+    }
+    
+    // Fila de receta con avisos de preferencias debajo del nombre
+    @ViewBuilder
+    func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
+        HStack(alignment: .top) {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .font(.title3)
+                .frame(width: 30)
+                .padding(.top, 2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(mealLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(mealLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(recipe.name)
-                        .fontWeight(.medium)
-                    
-                    // Calculamos los avisos usando la función de PreferenceWarning.swift
-                    // - Rojo:    alérgeno (no debería aparecer, pero por seguridad se muestra)
-                    // - Naranja: intolerancia → adaptar receta
-                    // - Gris:    alimento que no gusta → aviso suave
-                    let warnings = preferenceWarnings(for: recipe, preferences: preferences)
-                    ForEach(warnings) { warning in
-                        Label(warning.message, systemImage: warning.icon)
-                            .font(.caption2)
-                            .foregroundStyle(warning.color)
-                    }
-                }
-            }
-        }
-        
-        // Fila para un hueco vacío (la receta que había aquí fue borrada)
-        @ViewBuilder
-        func emptySlotRow(mealLabel: String, icon: String, iconColor: Color) -> some View {
-            HStack(alignment: .top) {
-                Image(systemName: icon)
-                    .foregroundStyle(iconColor.opacity(0.4))
-                    .font(.title3)
-                    .frame(width: 30)
-                    .padding(.top, 2)
+                Text(recipe.name)
+                    .fontWeight(.medium)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(mealLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Sin receta")
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                        .italic()
+                let warnings = preferenceWarnings(for: recipe, preferences: preferences)
+                ForEach(warnings) { warning in
+                    Label(warning.message, systemImage: warning.icon)
+                        .font(.caption2)
+                        .foregroundStyle(warning.color)
                 }
             }
         }
-        
-        var emptyStateView: some View {
-            ContentUnavailableView {
-                Label("Semana libre", systemImage: "calendar")
-            } description: {
-                Text("No hay menú planificado para esta semana.")
-            } actions: {
-                VStack {
-                    Picker("Estación", selection: $selectedSeason) {
-                        Text("Todas").tag(Season.all)
-                        Text("Verano").tag(Season.summer)
-                        Text("Invierno").tag(Season.winter)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 250)
-                    .padding(.bottom)
-                    
-                    Button("Generar Menú Ahora") {
-                        generateMenu()
-                    }
+    }
+    
+    // Fila para un hueco vacío (la receta que había aquí fue borrada)
+    @ViewBuilder
+    func emptySlotRow(mealLabel: String, icon: String, iconColor: Color) -> some View {
+        HStack(alignment: .top) {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor.opacity(0.4))
+                .font(.title3)
+                .frame(width: 30)
+                .padding(.top, 2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(mealLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Sin receta")
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                    .italic()
+            }
+        }
+    }
+    
+    var emptyStateView: some View {
+        ContentUnavailableView {
+            Label("Semana libre", systemImage: "calendar")
+        } description: {
+            Text("No hay menú planificado para esta semana.")
+        } actions: {
+            VStack {
+                Picker("Estación", selection: $selectedSeason) {
+                    Text("Todas").tag(Season.all)
+                    Text("Verano").tag(Season.summer)
+                    Text("Invierno").tag(Season.winter)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 250)
+                .padding(.bottom)
+                
+                Button("Generar Menú Ahora") { generateMenu() }
                     .buttonStyle(.borderedProminent)
                     .disabled(allRecipes.count < 2)
-                }
             }
         }
+    }
     
     // MARK: - Funciones Auxiliares
-       
-       // IDs de las recetas usadas la semana anterior (para evitar repeticiones)
-       var lastWeekExcludedIDs: Set<UUID> {
-           let calendar = Calendar.current
-           guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedDate) else { return [] }
+    var lastWeekExcludedIDs: Set<UUID> {
+        let calendar = Calendar.current
+        guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedDate) else { return [] }
+        
+        let lastWeekOfYear = calendar.component(.weekOfYear, from: lastWeekDate)
+        let lastYear       = calendar.component(.yearForWeekOfYear, from: lastWeekDate)
+        
+        let lastWeekMenus = allMenus.filter {
+            calendar.component(.weekOfYear, from: $0.date)        == lastWeekOfYear &&
+            calendar.component(.yearForWeekOfYear, from: $0.date) == lastYear
+        }
+        
+        var ids = Set<UUID>()
+        for menu in lastWeekMenus {
+            if let lunch = menu.lunch   { ids.insert(lunch.id) }
+            if let dinner = menu.dinner { ids.insert(dinner.id) }
+        }
+        return ids
+    }
     
-           let lastWeekOfYear = calendar.component(.weekOfYear, from: lastWeekDate)
-           let lastYear       = calendar.component(.yearForWeekOfYear, from: lastWeekDate)
+    var weekLabel: String {
+        let calendar = Calendar.current
+        if calendar.isDateInThisWeek(selectedDate) {
+            return "Esta Semana"
+        } else {
+            return "Semana \(calendar.component(.weekOfYear, from: selectedDate))"
+        }
+    }
     
-           let lastWeekMenus = allMenus.filter {
-               calendar.component(.weekOfYear, from: $0.date)        == lastWeekOfYear &&
-               calendar.component(.yearForWeekOfYear, from: $0.date) == lastYear
-           }
+    var dateRangeLabel: String {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)) ?? selectedDate
+        let endOfWeek = calendar.date(byAdding: .day, value: 6, to: startOfWeek) ?? selectedDate
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        return "\(formatter.string(from: startOfWeek)) - \(formatter.string(from: endOfWeek))"
+    }
     
-           var ids = Set<UUID>()
-           for menu in lastWeekMenus {
-               // Solo añadimos el id si la receta sigue existiendo (no es nil)
-               if let lunch = menu.lunch   { ids.insert(lunch.id) }
-               if let dinner = menu.dinner { ids.insert(dinner.id) }
-           }
-           return ids
-       }
-       
-       var weekLabel: String {
-           let calendar = Calendar.current
-           if calendar.isDateInThisWeek(selectedDate) {
-               return "Esta Semana"
-           } else {
-               return "Semana \(calendar.component(.weekOfYear, from: selectedDate))"
-           }
-       }
-       
-       var dateRangeLabel: String {
-           // Calcula el rango de fechas para mostrar (ej: 12 Feb - 18 Feb)
-           let calendar = Calendar.current
-           let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)) ?? selectedDate
-           let endOfWeek = calendar.date(byAdding: .day, value: 6, to: startOfWeek) ?? selectedDate
-           
-           let formatter = DateFormatter()
-           formatter.dateFormat = "d MMM"
-           return "\(formatter.string(from: startOfWeek)) - \(formatter.string(from: endOfWeek))"
-       }
-       
-       func moveWeek(by value: Int) {
-           if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: value, to: selectedDate) {
-               selectedDate = newDate
-           }
-       }
-       
-       func generateMenu(ignoreLastWeekRule: Bool = false) {
-           let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
-           
-           // Comprobar si hay suficientes recetas ANTES de generar
-           // Si no las hay y el usuario aún no ha confirmado, mostrar el aviso
-           let candidates = allRecipes.filter { !excluded.contains($0.id) }
-           if candidates.count < 14 && !ignoreLastWeekRule {
-               showNotEnoughAlert = true
-               return
-           }
-           
-           // Si el usuario pulsó "Generar igualmente" o hay suficientes recetas, generamos directamente
-           let result = MenuGenerator.generateWeekMenu(
-               recipes: allRecipes,
-               forWeekOf: selectedDate,
-               season: selectedSeason,
-               excludedRecipeIDs: excluded,
-               preferences: preferences
-           )
-           switch result {
-           case .success(let newMenu):
-               deleteCurrentWeek()
-               for dayPlan in newMenu { context.insert(dayPlan) }
-           case .failure:
-               // Solo llegaría aquí si no hay ni una sola receta en la app
-               showNotEnoughAlert = true
-           }
-       }
-       
-       func deleteCurrentWeek() {
-           for item in currentWeekMenu {
-               context.delete(item)
-           }
-       }
-   }
+    func moveWeek(by value: Int) {
+        if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: value, to: selectedDate) {
+            selectedDate = newDate
+        }
+    }
+    
+    func generateMenu(ignoreLastWeekRule: Bool = false, ignoreAvailability: Bool = false) {
+        let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
+        
+        // Comprobar si hay suficientes recetas ANTES de generar
+        let candidates = allRecipes.filter { !excluded.contains($0.id) }
+        if candidates.count < 14 && !ignoreLastWeekRule {
+            showNotEnoughAlert = true
+            return
+        }
+        
+        let result = MenuGenerator.generateWeekMenu(
+            recipes: allRecipes,
+            forWeekOf: selectedDate,
+            season: selectedSeason,
+            excludedRecipeIDs: excluded,
+            preferences: preferences,
+            fixedAssignments: fixedAssignments,
+            ignoreAvailability: ignoreAvailability
+        )
+        switch result {
+        case .success(let newMenu):
+            deleteCurrentWeek()
+            for dayPlan in newMenu { context.insert(dayPlan) }
+        case .failure(.notEnoughForAvailability):
+            showAvailabilityAlert = true
+        case .failure:
+            showNotEnoughAlert = true
+        }
+    }
+    
+    func deleteCurrentWeek() {
+        for item in currentWeekMenu {
+            context.delete(item)
+        }
+    }
+}
 
 // MARK: - Extensiones
-
 extension Calendar {
     func isDateInThisWeek(_ date: Date) -> Bool {
         return isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
     }
 }
+
