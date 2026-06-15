@@ -17,8 +17,11 @@ struct ShoppingListView: View {
     @Query var allMenus: [WeeklyMenu]
     @State private var selectedDate = Date()
     
-    // Datos Manuales (NUEVO)
+    // Datos Manuales
     @Query var extraItems: [ExtraItem]
+    
+    // Número de comensales
+    @AppStorage("dinersCount") var dinersCount: Int = 2
     
     // Estado de la interfaz
     @State private var checkedItems: Set<String> = []
@@ -36,15 +39,20 @@ struct ShoppingListView: View {
         let menus = allMenus.filter { calendar.component(.weekOfYear, from: $0.date) == weekOfYear }
         
         for menu in menus {
-            // Solo sumamos los ingredientes si la receta sigue existiendo (no es nil)
+            // Comida: escalamos cada ingrediente según las personas base de la receta
             if let lunch = menu.lunch {
+                let factor = servingsFactor(for: lunch)
                 for ing in lunch.ingredients {
-                    addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false)
+                    addIngredient(to: &totals, name: ing.name,
+                                  qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }
             }
+            // Cena: igual
             if let dinner = menu.dinner {
+                let factor = servingsFactor(for: dinner)
                 for ing in dinner.ingredients {
-                    addIngredient(to: &totals, name: ing.name, qty: ing.quantity, unit: ing.unit, isManual: false)
+                    addIngredient(to: &totals, name: ing.name,
+                                  qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }
             }
         }
@@ -59,26 +67,30 @@ struct ShoppingListView: View {
             IngredientGroup(name: key, totalQuantity: value.0, unit: value.1, isManual: value.2)
         }.sorted { $0.name < $1.name }
     }
+    // Factor de escala de una receta según los comensales
+    func servingsFactor(for recipe: Recipe) -> Double {
+        let base = max(recipe.baseServings, 1)   // evitar división por cero
+        return Double(dinersCount) / Double(base)
+    }
     
     var pendingItems: [IngredientGroup] { fullShoppingList.filter { !isChecked($0.name) } }
     var completedItems: [IngredientGroup] { fullShoppingList.filter { isChecked($0.name) } }
     
     // Función auxiliar para sumar cantidades
-    func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
-        let key = name.lowercased().capitalized
-        
-        if let existing = totals[key] {
-            // Si la unidad coincide, sumamos. Si uno es manual, el total se marca como "contiene manual"
-            if existing.1 == unit {
-                totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
+        func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
+            let key = name.lowercased().capitalized
+     
+            if let existing = totals[key] {
+                if existing.1 == unit {
+                    totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
+                } else {
+                    let newKey = "\(key) (\(unit))"
+                    totals[newKey] = (qty, unit, isManual)
+                }
             } else {
-                let newKey = "\(key) (\(unit))"
-                totals[newKey] = (qty, unit, isManual)
+                totals[key] = (qty, unit, isManual)
             }
-        } else {
-            totals[key] = (qty, unit, isManual)
         }
-    }
     
     // MARK: VISTA
     

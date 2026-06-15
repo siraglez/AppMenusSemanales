@@ -23,6 +23,9 @@ class Recipe {
     // Disponibilidad semanal
     var weekAvailabilityRaw: String = WeekAvailability.any.rawValue
     
+    // Cantidad de personas para la que es la receta
+    var baseServings: Int = 2
+    
     // Datos nutricionales
     var calories: Double?
     var proteins: Double?
@@ -59,5 +62,6 @@ class Recipe {
         self.seasonRaw = season.rawValue
         self.categoryRaw = RecipeCategory.other.rawValue
         self.weekAvailabilityRaw = WeekAvailability.any.rawValue
+        self.baseServings = 2
     }
 }

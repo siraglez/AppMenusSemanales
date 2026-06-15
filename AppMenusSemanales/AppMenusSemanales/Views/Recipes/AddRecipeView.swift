@@ -2,7 +2,7 @@
 //  AddRecipeView.swift
 //  AppMenusSemanales
 //
-//  Created by Sira Gonzalez-Madroño 
+//  Created by Sira Gonzalez-Madroño
 //
 // Formulario para crear receta
 
@@ -21,6 +21,7 @@ struct AddRecipeView: View {
     @State private var selectedSeason: Season = .all
     @State private var selectedMealType: MealType = .lunch
     @State private var selectedAvailability: WeekAvailability = .any
+    @State private var baseServings: Int = 2
     
     @State private var isCalculatingNutrition = false
     @State private var translationConfig: TranslationSession.Configuration?
@@ -48,13 +49,25 @@ struct AddRecipeView: View {
                     }
                     .pickerStyle(.segmented)
                     
-                    // Selector de Estación (CORREGIDO: Ahora es Segmented también)
+                    // Selector de Estación
                     Picker("Estación", selection: $selectedSeason) {
                         ForEach(Season.allCases) { season in
                             Text(season.rawValue).tag(season)
                         }
                     }
                     .pickerStyle(.segmented)
+                    
+                    // Selector de disponibilidad (entre semana o fin de semana)
+                    Picker("Disponibilidad", selection: $selectedAvailability) {
+                        ForEach(WeekAvailability.allCases) { availability in
+                            Text(availability.rawValue).tag(availability)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    
+                    // Para cuántas personas son las cantidades de los ingredientes
+                    Stepper("Cantidades para \(baseServings) \(baseServings == 1 ? "persona" : "personas")",
+                            value: $baseServings, in: 1...20)
                 }
                 
                 // SECCIÓN 2: AÑADIR INGREDIENTES
