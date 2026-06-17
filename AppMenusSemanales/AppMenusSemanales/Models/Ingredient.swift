@@ -12,10 +12,13 @@ import SwiftData
 
 @Model
 class Ingredient {
-    var id: UUID
-    var name: String
-    var quantity: Double
-    var unit: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var quantity: Double = 0
+    var unit: String = ""
+    
+    // Inversa de Recipe.ingredients necesaria para ClouKit
+    var recipe: Recipe?
     
     init(name: String, quantity: Double, unit: String) {
         self.id = UUID()

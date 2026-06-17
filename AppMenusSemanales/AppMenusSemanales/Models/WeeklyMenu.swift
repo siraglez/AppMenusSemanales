@@ -11,12 +11,14 @@ import SwiftData
 
 @Model
 class WeeklyMenu {
-    var id: UUID
-    var dayName: String // Lunes, Martes...
-    var date: Date // Para saber de qué semana es
+    var id: UUID = UUID()
+    var dayName: String = "" // Lunes, Martes...
+    var date: Date = Date() // Para saber de qué semana es
     
-    @Relationship(deleteRule: .nullify) var lunch: Recipe?
-    @Relationship(deleteRule: .nullify) var dinner: Recipe?
+    @Relationship(deleteRule: .nullify, inverse: \Recipe.menusAsLunch)
+    var lunch: Recipe?
+    @Relationship(deleteRule: .nullify, inverse: \Recipe.menusAsDinner)
+    var dinner: Recipe?
     
     init(dayName: String, date: Date, lunch: Recipe, dinner: Recipe) {
         self.id = UUID()

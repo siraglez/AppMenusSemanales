@@ -12,12 +12,13 @@ import SwiftData
 
 @Model
 class FixedAssignment {
-    var id: UUID
-    var dayName: String
-    var mealType: String
+    var id: UUID = UUID()
+    var dayName: String = ""
+    var mealType: String = ""
     
     // Si se borra la receta, la asignación queda sin receta en vez de romperse
-    @Relationship(deleteRule: .nullify) var recipe: Recipe?
+    @Relationship(deleteRule: .nullify, inverse: \Recipe.fixedAssignments)
+    var recipe: Recipe?
     
     init(dayName: String, mealType: String, recipe: Recipe?) {
         self.id = UUID()

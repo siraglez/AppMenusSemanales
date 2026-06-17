@@ -7,9 +7,9 @@
 // Modelo para guardar alergias, intolerancias y preferencias del usuario
 //
 //  TRES NIVELES DE RESTRICCIÓN:
-//  - Alergia     → la receta se EXCLUYE completamente del menú generado
+//  - Alergia → la receta se EXCLUYE completamente del menú generado
 //  - Intolerancia → la receta se INCLUYE pero con aviso de adaptación (ej: sin lactosa)
-//  - No me gusta  → aviso SUAVE, el usuario decide si incluirla o no
+//  - No me gusta → aviso SUAVE, el usuario decide si incluirla o no
 
 import Foundation
 import SwiftData
@@ -18,13 +18,17 @@ import SwiftData
 class UserPreferences {
     
     // Alergias: ingredientes peligrosos → receta descartada del menú
-    var allergies: [String]
+    var allergies: [String] = []
     
     // Intolerancias: ingredientes problemáticos → receta incluida con aviso de adaptación
-    var intolerances: [String]
+    var intolerances: [String] = []
     
     // Preferencias: ingredientes que no gustan → aviso suave
-    var dislikes: [String]
+    var dislikes: [String] = []
+    
+    // Inversa de FamilyMember.preferences necesaria para CloudKit
+    // Queda a nil para las preferencias del usuario principal actual
+    var member: FamilyMember?
     
     init() {
         self.allergies    = []

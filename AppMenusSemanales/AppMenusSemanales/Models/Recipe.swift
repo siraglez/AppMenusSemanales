@@ -12,18 +12,17 @@ import SwiftData
 
 @Model
 class Recipe {
-    var id: UUID
-    var name: String
-    var instructions: String
-    @Relationship(deleteRule: .cascade) var ingredients: [Ingredient] = []
+    var id: UUID = UUID()
+    var name: String = ""
+    var instructions: String = ""
+    
+    @Relationship(deleteRule: .cascade, inverse: \Ingredient.recipe)
+    var ingredients: [Ingredient] = []
+    
     var mealTypeRaw: String
     var seasonRaw: String
     var categoryRaw: String
-    
-    // Disponibilidad semanal
     var weekAvailabilityRaw: String = WeekAvailability.any.rawValue
-    
-    // Cantidad de personas para la que es la receta
     var baseServings: Int = 2
     
     // Datos nutricionales
@@ -31,6 +30,12 @@ class Recipe {
     var proteins: Double?
     var carbs: Double?
     var fats: Double?
+    
+    // Relaciones inversas necesarias para Cloudkit
+    // No se usan directamente en el código, solo existen para que las relaciones de Weeklyenu y FixedAssignment tengan su "vuelta"
+    var menusAsLunch: [WeeklyMenu] = []
+    var menusAsDinner: [WeeklyMenu] = []
+    var fixedAssignments: [FixedAssignment] = []
     
     // Convertir los String guardados a los Enums para usarlos fácil en código
     var mealType: MealType {

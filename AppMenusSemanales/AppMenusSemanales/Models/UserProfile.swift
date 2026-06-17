@@ -11,11 +11,11 @@ import SwiftData
 
 @Model
 class UserProfile {
-    var name: String
-    var surname: String
-    var email: String
-    var password: String
-    var registerDate: Date
+    var name: String = ""
+    var surname: String = ""
+    var email: String = ""
+    var password: String = ""  // Hash SHA-256
+    var registerDate: Date = Date()
     
     init(name: String, surname: String, email: String, password: String) {
         self.name = name
