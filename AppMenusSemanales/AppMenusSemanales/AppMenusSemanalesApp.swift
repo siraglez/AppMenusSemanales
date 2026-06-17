@@ -45,7 +45,8 @@ struct AppMenusSemanalesApp: App {
             WeeklyMenu.self,
             ExtraItem.self,
             UserPreferences.self,
-            FixedAssignment.self
+            FixedAssignment.self,
+            FamilyMember.self
         ])
     }
 }

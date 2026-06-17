@@ -14,6 +14,7 @@ class FamilyMember {
     var id: UUID = UUID()
     var name: String = ""
     var role: String = ""  // "Principal", "Familiar"
+    var isAtHome: Bool = true
     
     @Relationship(inverse: \UserPreferences.member)
     var preferences: UserPreferences?
@@ -22,5 +23,6 @@ class FamilyMember {
         self.id = UUID()
         self.name = name
         self.role = role
+        self.isAtHome = true
     }
 }

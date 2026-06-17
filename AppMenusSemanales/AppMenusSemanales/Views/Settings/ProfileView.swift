@@ -51,6 +51,13 @@ struct ProfileView: View {
                         }
                     }
                     
+                    // ── Grupo Familiar ──
+                    Section("Grupo Familiar") {
+                        NavigationLink(destination: FamilyMembersEditorView()) {
+                            Label("Miembros de la familia", systemImage: "person.3")
+                        }
+                    }
+                    
                     // ── Cuenta ──
                     Section("Cuenta") {
                         Button("Cerrar Sesión", role: .destructive) {

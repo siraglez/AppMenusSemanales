@@ -53,7 +53,7 @@ struct RecipeDetailView: View {
                 // Avisos de preferencias (alergia / intolerancia / no me gusta)
                 // Se calculan con la función de PreferenceWarning.swift y se muestran
                 // en recuadros de color: rojo (alérgeno), naranja (adaptar), gris (no gusta)
-                let warnings = preferenceWarnings(for: recipe, preferences: userPreferences.first)
+                let warnings = preferenceWarnings(for: recipe, preferences: userPreferences.first { $0.member == nil })
                 if !warnings.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(warnings) { warning in

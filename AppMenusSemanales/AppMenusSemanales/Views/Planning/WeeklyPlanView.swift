@@ -34,7 +34,7 @@ struct WeeklyPlanView: View {
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
     // Acceso conveniente a las preferencias (solo hay un objeto en la BD)
-    var preferences: UserPreferences? { userPreferences.first }
+    var preferences: UserPreferences? { userPreferences.first { $0.member == nil } }
     
     var body: some View {
         NavigationStack {
