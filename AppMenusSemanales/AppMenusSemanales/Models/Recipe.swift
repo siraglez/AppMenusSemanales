@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  Recipe.swift
 //  AppMenusSemanales
 //
 //  Created by Sira Gonzalez-Madroño
@@ -19,9 +19,9 @@ class Recipe {
     @Relationship(deleteRule: .cascade, inverse: \Ingredient.recipe)
     var ingredients: [Ingredient] = []
     
-    var mealTypeRaw: String
-    var seasonRaw: String
-    var categoryRaw: String
+    var mealTypeRaw: String = MealType.lunch.rawValue
+    var seasonRaw: String = Season.all.rawValue
+    var categoryRaw: String = RecipeCategory.other.rawValue
     var weekAvailabilityRaw: String = WeekAvailability.any.rawValue
     var baseServings: Int = 2
     

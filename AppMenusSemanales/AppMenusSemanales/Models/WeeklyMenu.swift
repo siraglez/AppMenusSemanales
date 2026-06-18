@@ -20,7 +20,7 @@ class WeeklyMenu {
     @Relationship(deleteRule: .nullify, inverse: \Recipe.menusAsDinner)
     var dinner: Recipe?
     
-    init(dayName: String, date: Date, lunch: Recipe, dinner: Recipe) {
+    init(dayName: String, date: Date, lunch: Recipe?, dinner: Recipe?) {
         self.id = UUID()
         self.dayName = dayName
         self.date = date

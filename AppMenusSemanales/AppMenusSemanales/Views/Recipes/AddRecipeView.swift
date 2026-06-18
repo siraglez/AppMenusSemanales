@@ -146,6 +146,8 @@ struct AddRecipeView: View {
                     instructions = recipe.instructions
                     selectedMealType = recipe.mealType
                     selectedSeason = recipe.season
+                    selectedAvailability = recipe.weekAvailability
+                    baseServings = recipe.baseServings
                     tempIngredients = recipe.ingredients
                 }
             }

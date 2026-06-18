@@ -64,21 +64,11 @@ class MenuGenerator {
         if lunchPool.isEmpty  { lunchPool  = candidates.shuffled() }
         if dinnerPool.isEmpty { dinnerPool = candidates.shuffled() }
         
-        // Si no hay suficientes recetas, rellenamos repitiendo
-        // (solo llega aquí si el usuario eligió "Generar igualmente")
-        while lunchPool.count < 7 {
-            guard !candidates.isEmpty else { return .failure(.notEnoughRecipes) }
-            lunchPool.append(contentsOf: candidates.filter {
-                $0.mealType == .lunch || $0.mealType == .both
-            }.shuffled())
-        }
-        while dinnerPool.count < 7 {
-            guard !candidates.isEmpty else { return .failure(.notEnoughRecipes) }
-            dinnerPool.append(contentsOf: candidates.filter {
-                $0.mealType == .dinner || $0.mealType == .both
-            }.shuffled())
-        }
+        // Si no hay ni una sola receta disponible, no se puede generar el menú
+        guard !candidates.isEmpty else { return .failure(.notEnoughRecipes) }
         
+        // Si no llegamos a 7, rellenamos repitiendo recetas (cualquiera) para no bloquearnos.
+        // Se llega aquí solo si el usuario eligió "Generar igualmente".
         while lunchPool.count < 7  { lunchPool.append(contentsOf: candidates.shuffled()) }
         while dinnerPool.count < 7 { dinnerPool.append(contentsOf: candidates.shuffled()) }
         
