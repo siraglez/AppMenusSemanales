@@ -31,7 +31,7 @@ class MenuGenerator {
         forWeekOf date: Date,
         season: Season = .all,
         excludedRecipeIDs: Set<UUID> = [],
-        preferences: UserPreferences? = nil,
+        allergies: [String] = [],
         fixedAssignments: [FixedAssignment] = [],
         ignoreAvailability: Bool = false
     ) -> Result<[WeeklyMenu], MenuGenerationError> {
@@ -46,16 +46,12 @@ class MenuGenerator {
         }
         if available.isEmpty { available = recipes }
         
-        // 2. Filtrar recetas con ALÉRGENOS del usuario
-        // Usa el diccionario intoleranceIngredients (de PreferenceWarning.swift) para que "lactosa" también excluya recetas con "queso", "nata", etc.
-        if let prefs = preferences, !prefs.allergies.isEmpty {
+        // 2. Filtrar recetas con ALÉRGENOS de cualquier comensal en casa
+        if !allergies.isEmpty {
             let safeRecipes = available.filter { recipe in
-                !recipeContainsAllergen(recipe, allergies: prefs.allergies)
+                !recipeContainsAllergen(recipe, allergies: allergies)
             }
-            // Solo aplicamos el filtro si quedan recetas suficientes
-            if !safeRecipes.isEmpty {
-                available = safeRecipes
-            }
+            if !safeRecipes.isEmpty { available = safeRecipes }
         }
         
         // 3. Excluir recetas de la semana anterior

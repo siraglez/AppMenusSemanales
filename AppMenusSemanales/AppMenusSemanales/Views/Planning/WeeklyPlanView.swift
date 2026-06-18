@@ -13,14 +13,12 @@ struct WeeklyPlanView: View {
     // 1. Acceso a la base de datos para guardar/borrar
     @Environment(\.modelContext) var context
     
-    // 2. Traer TODO el histórico de menús
     @Query var allMenus: [WeeklyMenu]
-    
-    // 3. Traer TODAS las recetas para que el generador pueda elegir
     @Query var allRecipes: [Recipe]
-    
     @Query var userPreferences: [UserPreferences]
     @Query var fixedAssignments: [FixedAssignment]
+    @Query var familyMembers: [FamilyMember]
+    @Query var users: [UserProfile]
     
     @Binding var selectedTab: Int
     
@@ -33,8 +31,35 @@ struct WeeklyPlanView: View {
     // Para ordenar los días correctamente siempre
     let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
-    // Acceso conveniente a las preferencias (solo hay un objeto en la BD)
-    var preferences: UserPreferences? { userPreferences.first { $0.member == nil } }
+    // MARK: - Comensales y preferencias
+    // Miembros que están en casa hoy
+    var atHomeMembers: [FamilyMember] { familyMembers.filter {
+        $0.isAtHome } }
+    
+    // Comensales que comen: "yo" (usuario principal) + preferencias y los miembros en casa
+    var eaters: [(name: String, prefs: UserPreferences)] {
+        var list: [(String, UserPreferences)] = []
+        
+        // Usuario principal (preferencias globales, member == nil)
+        if let global = userPreferences.first(where: { $0.member == nil}) {
+            let myName = users.first?.name ?? ""
+            list.append((myName.isEmpty ? "Tú" : myName, global))
+        }
+        // Miembros en casa con sus propias preferencias
+        for member in atHomeMembers {
+            if let prefs = member.preferences {
+                list.append((member.name.isEmpty ? "Miembro" : member.name, prefs))
+            }
+        }
+        return list
+    }
+    
+    // Alergias combinadas de todos los comensales
+    var combinedAllergies: [String] {
+        var set = Set<String>()
+        for eater in eaters { set.formUnion(eater.prefs.allergies) }
+        return Array(set)
+    }
     
     var body: some View {
         NavigationStack {
@@ -172,7 +197,7 @@ struct WeeklyPlanView: View {
         .listStyle(.insetGrouped)
     }
     
-    // Fila de receta con avisos de preferencias debajo del nombre
+    // Fila de receta con avisos de alergias por miembro
     @ViewBuilder
     func recipeRow(recipe: Recipe, mealLabel: String, icon: String, iconColor: Color) -> some View {
         HStack(alignment: .top) {
@@ -190,11 +215,13 @@ struct WeeklyPlanView: View {
                 Text(recipe.name)
                     .fontWeight(.medium)
                 
-                let warnings = preferenceWarnings(for: recipe, preferences: preferences)
-                ForEach(warnings) { warning in
-                    Label(warning.message, systemImage: warning.icon)
+                // Avisos de todos los comensales en casa, indicando a quién afectan
+                
+                let warnings = familyPreferenceWarnings(for: recipe, eaters: eaters)
+                ForEach(warnings) { mw in
+                    Label("\(mw.memberName) - \(mw.warning.message)", systemImage: mw.warning.icon)
                         .font(.caption2)
-                        .foregroundStyle(warning.color)
+                        .foregroundStyle(mw.warning.color)
                 }
             }
         }
@@ -306,7 +333,7 @@ struct WeeklyPlanView: View {
             forWeekOf: selectedDate,
             season: selectedSeason,
             excludedRecipeIDs: excluded,
-            preferences: preferences,
+            allergies: combinedAllergies,
             fixedAssignments: fixedAssignments,
             ignoreAvailability: ignoreAvailability
         )

@@ -19,14 +19,16 @@ struct ShoppingListView: View {
     
     // Datos Manuales
     @Query var extraItems: [ExtraItem]
-    
-    // Número de comensales
-    @AppStorage("dinersCount") var dinersCount: Int = 2
+    @Query var familyMembers: [FamilyMember]
     
     // Estado de la interfaz
     @State private var checkedItems: Set<String> = []
     @State private var isCompletedExpanded: Bool = false
-    @State private var showAddSheet: Bool = false // Para mostrar el formulario
+    @State private var showAddSheet: Bool = false
+    
+    var dinersCount: Int {
+        1 + familyMembers.filter { $0.isAtHome }.count
+    }
     
     // MARK: CÁLCULO INTELIGENTE DE LA LISTA
     
@@ -77,26 +79,39 @@ struct ShoppingListView: View {
     var completedItems: [IngredientGroup] { fullShoppingList.filter { isChecked($0.name) } }
     
     // Función auxiliar para sumar cantidades
-        func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
-            let key = name.lowercased().capitalized
-     
-            if let existing = totals[key] {
-                if existing.1 == unit {
-                    totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
-                } else {
-                    let newKey = "\(key) (\(unit))"
-                    totals[newKey] = (qty, unit, isManual)
-                }
+    func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
+        let key = name.lowercased().capitalized
+        
+        if let existing = totals[key] {
+            if existing.1 == unit {
+                totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
             } else {
-                totals[key] = (qty, unit, isManual)
+                let newKey = "\(key) (\(unit))"
+                totals[newKey] = (qty, unit, isManual)
             }
+        } else {
+            totals[key] = (qty, unit, isManual)
         }
+    }
     
     // MARK: VISTA
     
     var body: some View {
         NavigationStack {
             List {
+                // Comensales (automático, solo informativo)
+                Section {
+                    HStack {
+                        Label("Comensales", systemImage: "person.2.fill")
+                        Spacer()
+                        Text("\(dinersCount)")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                    }
+                } footer: {
+                    Text("Se calcula automáticamente: tu + los miembros marcados como 'en casa' en Grupo Familiar. Las cantidades del menú se ajustan a este número.")
+                }
+                
                 if fullShoppingList.isEmpty {
                     ContentUnavailableView("Lista vacía", systemImage: "cart", description: Text("Añade productos manualmente o genera un menú."))
                 } else {
@@ -261,5 +276,5 @@ struct IngredientGroup: Identifiable {
     let name: String
     let totalQuantity: Double
     let unit: String
-    let isManual: Bool // Para saber si podemos borrarlo o no
+    let isManual: Bool
 }

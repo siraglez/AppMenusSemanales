@@ -18,7 +18,6 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
-    // nil = deja que mande el sistema
     var colorScheme: ColorScheme? {
         switch self {
         case .system: return nil
@@ -36,7 +35,6 @@ struct SettingsView: View {
     
     // Ajustes guardados en el dispositivo
     @AppStorage("appAppearance") var appAppearanceRaw: String = AppAppearance.system.rawValue
-    @AppStorage("dinersCount") var dinersCount: Int = 2
     
     // Estados para las alertas de confirmación
     @State private var showDeleteMenusAlert = false
@@ -51,15 +49,6 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-            }
-            
-            // ── Menú y compra ──
-            Section {
-                Stepper("Comensales por defecto: \(dinersCount)", value: $dinersCount, in: 1...20)
-            } header: {
-                Text("Menú y Compra")
-            } footer: {
-                Text("Número de personas que se usa para calcular las cantidades de la lista de la compra.")
             }
             
             // ── Gestión de datos ──
