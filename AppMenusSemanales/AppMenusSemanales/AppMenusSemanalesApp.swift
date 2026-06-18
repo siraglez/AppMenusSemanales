@@ -25,18 +25,23 @@ import SwiftData
 struct AppMenusSemanalesApp: App {
     @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
     @AppStorage("needsPreferencesSetup") var needsPreferencesSetup: Bool = false
+    @AppStorage("appAppearance")
+    var appAppearanceRaw: String = AppAppearance.system.rawValue
     
     var body: some Scene {
         WindowGroup {
-            if isLoggedIn {
-                if needsPreferencesSetup {
-                    OnboardingPreferencesView()
+            Group {
+                if isLoggedIn {
+                    if needsPreferencesSetup {
+                        OnboardingPreferencesView()
+                    } else {
+                        ContentView()
+                    }
                 } else {
-                    ContentView()
+                    LoginView()
                 }
-            } else {
-                LoginView()
             }
+            .preferredColorScheme(AppAppearance(rawValue: appAppearanceRaw)?.colorScheme)
         }
         // Crear el archivo de base de datos automáticamente
         .modelContainer(for: [

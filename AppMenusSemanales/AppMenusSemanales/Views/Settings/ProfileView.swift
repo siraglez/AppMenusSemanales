@@ -74,7 +74,7 @@ struct ProfileView: View {
             }
             .navigationTitle("Perfil")
             .toolbar {
-                Button(action: { }) {
+                NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gear")
                 }
             }
