@@ -1,0 +1,17 @@
+# Secretos locales (claves de API) - NUNCA SUBIR
+Secrets.xcconfig
+
+# Basura de macOS
+.DS_Store
+
+#Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
