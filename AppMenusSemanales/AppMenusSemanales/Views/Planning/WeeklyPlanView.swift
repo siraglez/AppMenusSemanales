@@ -21,8 +21,8 @@ struct WeeklyPlanView: View {
     @AppStorage("myName") var myName: String = ""
     
     @Binding var selectedTab: Int
+    @Binding var selectedDate: Date
     
-    @State private var selectedDate: Date
     @State private var showRegenerateAlert = false
     @State private var selectedSeason: Season = .all
     @State private var showNotEnoughAlert = false
