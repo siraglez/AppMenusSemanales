@@ -26,22 +26,25 @@ struct AddRecipeView: View {
     @State private var isCalculatingNutrition = false
     @State private var translationConfig: TranslationSession.Configuration?
     
-    // --- VARIABLES PARA EL NUEVO INGREDIENTE ---
+    // Aviso cuando no se puede calcular la nutrición (sin conexión, ...)
+    @State private var showNutritionWarning = false
+    @State private var pendingCategory: RecipeCategory = .other
+    
+    // -- VARIABLES PARA EL NUEVO INGREDIENTE --
     @State private var newIngName: String = ""
     @State private var newIngQuantity: String = ""
     @State private var newIngUnit: String = "ud"
     @State private var tempIngredients: [Ingredient] = []
     
-    let units = ["ud", "g", "kg", "ml", "L", "cucharada", "pizca"]
+    let units = ["ud", "g", "kg", "ml", "l", "cucharada", "pizca"]
     
     var body: some View {
         NavigationStack {
             Form {
-                // SECCIÓN 1: DATOS GENERALES
+                // SECCION 1: DATOS GENERALES
                 Section("Información del plato") {
                     TextField("Nombre del plato", text: $name)
                     
-                    // Selector de Comida/Cena (Segmented)
                     Picker("Tipo", selection: $selectedMealType) {
                         ForEach(MealType.allCases) { type in
                             Text(type.rawValue).tag(type)
@@ -49,15 +52,13 @@ struct AddRecipeView: View {
                     }
                     .pickerStyle(.segmented)
                     
-                    // Selector de Estación
                     Picker("Estación", selection: $selectedSeason) {
-                        ForEach(Season.allCases) { season in
+                        ForEach(Season.allCases) {season in
                             Text(season.rawValue).tag(season)
                         }
                     }
                     .pickerStyle(.segmented)
                     
-                    // Selector de disponibilidad (entre semana o fin de semana)
                     Picker("Disponibilidad", selection: $selectedAvailability) {
                         ForEach(WeekAvailability.allCases) { availability in
                             Text(availability.rawValue).tag(availability)
@@ -65,41 +66,38 @@ struct AddRecipeView: View {
                     }
                     .pickerStyle(.menu)
                     
-                    // Para cuántas personas son las cantidades de los ingredientes
                     Stepper("Cantidades para \(baseServings) \(baseServings == 1 ? "persona" : "personas")",
-                            value: $baseServings, in: 1...20)
+                    value: $baseServings, in: 1...20)
                 }
                 
                 // SECCIÓN 2: AÑADIR INGREDIENTES
                 Section("Ingredientes") {
-                    // Formulario en línea corregido
                     HStack {
                         TextField("Ingrediente", text: $newIngName)
-                            .layoutPriority(1) // Da prioridad al nombre para que ocupe espacio
+                            .layoutPriority(1)
                         
                         TextField("Cant.", text: $newIngQuantity)
                             .keyboardType(.decimalPad)
-                            .frame(width: 50) // Ancho fijo para la cantidad
+                            .frame(width: 50)
                         
                         Picker("", selection: $newIngUnit) {
                             ForEach(units, id: \.self) { unit in
                                 Text(unit).tag(unit)
                             }
                         }
-                        .pickerStyle(.menu) // Se abre como menú flotante
+                        .pickerStyle(.menu)
                         .labelsHidden()
-                        .frame(width: 60) // Limitamos su ancho
+                        .frame(width: 60)
                         
                         Button(action: addIngredient) {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundStyle(.blue)
                                 .font(.title2)
                         }
-                        .buttonStyle(.borderless) // ¡CRUCIAL! Permite hacer clic sin seleccionar la fila
+                        .buttonStyle(.borderless)
                         .disabled(newIngName.isEmpty || newIngQuantity.isEmpty)
                     }
                     
-                    // Lista de ingredientes añadidos
                     List {
                         ForEach(tempIngredients) { ingredient in
                             HStack {
@@ -155,6 +153,12 @@ struct AddRecipeView: View {
                 await save(session: session)
                 translationConfig = nil
             }
+            .alert("No se pudo calcular la nutrición", isPresented: $showNutritionWarning) {
+                Button("Guardar igualmente") { persist(nutrition: nil) }
+                Button("Cancelar", role: .cancel) { }
+            } message: {
+                Text("No hemos podido obtener la información nutricional (puede que no haya conexión a internet). Puedes guardar la receta ahora y editarlas más tarde para calcularla, o cancelar.")
+            }
         }
     }
     
@@ -163,41 +167,49 @@ struct AddRecipeView: View {
         translationConfig = TranslationSession.Configuration(
             source: Locale.Language(identifier: "es"),
             target: Locale.Language(identifier: "en")
-        )
+            )
     }
     
     func addIngredient() {
-        // Truco: Reemplazamos coma por punto por si el usuario usa teclado español
         let quantityString = newIngQuantity.replacingOccurrences(of: ",", with: ".")
         let quantity = Double(quantityString) ?? 0.0
-        
         let newIngredient = Ingredient(name: newIngName, quantity: quantity, unit: newIngUnit)
         tempIngredients.append(newIngredient)
-        
-        // Limpiamos campos y ponemos el foco en nombre (opcional)
         newIngName = ""
         newIngQuantity = ""
     }
     
     func save(session: TranslationSession? = nil) async {
-        let nutrition = await NutritionService.calculateNutrition(
+        let result = await NutritionService.calculateNutrition(
             for: tempIngredients,
             translationSession: session
         )
-        let detectedCategory = NutritionService.detectCategory(from: tempIngredients)
+        pendingCategory = NutritionService.detectCategory(from: tempIngredients)
+        isCalculatingNutrition = false
         
+        // Si hubi fallo de conexión o no se calculó ningún ingrediente, avisamos
+        if result.networkError || result.fetched == 0 {
+            showNutritionWarning = true
+        } else {
+            persist(nutrition: result.info)
+        }
+    }
+    
+    // Guarda la receta (con nutrición si la hay, o sin ella si se guardó "igualmente")
+    func persist(nutrition: NutritionInfo?) {
         if let recipe = recipeToEdit {
             recipe.name = name
             recipe.instructions = instructions
             recipe.mealType = selectedMealType
             recipe.season = selectedSeason
             recipe.weekAvailability = selectedAvailability
+            recipe.baseServings = baseServings
             recipe.ingredients = tempIngredients
-            recipe.calories = nutrition.calories
-            recipe.proteins = nutrition.proteins
-            recipe.carbs    = nutrition.carbs
-            recipe.fats     = nutrition.fats
-            recipe.category = detectedCategory
+            recipe.calories = nutrition?.calories
+            recipe.proteins = nutrition?.proteins
+            recipe.carbs = nutrition?.carbs
+            recipe.fats = nutrition?.fats
+            recipe.category = pendingCategory
         } else {
             let newRecipe = Recipe(
                 name: name,
@@ -207,15 +219,14 @@ struct AddRecipeView: View {
                 season: selectedSeason
             )
             newRecipe.weekAvailability = selectedAvailability
-            newRecipe.calories = nutrition.calories
-            newRecipe.proteins = nutrition.proteins
-            newRecipe.carbs    = nutrition.carbs
-            newRecipe.fats     = nutrition.fats
-            newRecipe.category = detectedCategory
+            newRecipe.baseServings = baseServings
+            newRecipe.calories = nutrition?.calories
+            newRecipe.proteins = nutrition?.proteins
+            newRecipe.carbs = nutrition?.carbs
+            newRecipe.fats = nutrition?.fats
+            newRecipe.category = pendingCategory
             context.insert(newRecipe)
         }
-        
-        isCalculatingNutrition = false
         dismiss()
     }
 }

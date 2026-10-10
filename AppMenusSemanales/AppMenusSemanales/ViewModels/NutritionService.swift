@@ -17,6 +17,14 @@ struct NutritionInfo {
     var fats: Double = 0
 }
 
+// Resultado del cálculo: además de los valores, informa de cuántos ingredientes se pudieron calcular y si hubo un problema de conexión
+struct NutritionResult {
+    var info: NutritionInfo
+    var fetched: Int  // Ingredientes calculados con éxito
+    var total: Int  // Ingredientes totales
+    var networkError: Bool  // True si hubo un fallo de conexión
+}
+
 class NutritionService {
     
     private static let apiKey = AppSecrets.usdaAPIKey
@@ -110,8 +118,10 @@ class NutritionService {
     static func calculateNutrition(
         for ingredients: [Ingredient],
         translationSession: TranslationSession? = nil
-    ) async -> NutritionInfo {
+    ) async -> NutritionResult {
         var total = NutritionInfo()
+        var fetched = 0
+        var networkError = false
         
         for ingredient in ingredients {
             let englishName: String
@@ -121,17 +131,22 @@ class NutritionService {
                 englishName = translateWithDictionary(ingredient.name)
             }
             
-            // Llamada a la API por cada ingrediente
-            if let perHundredGrams = await fetchNutrients(for: englishName) {
+            switch await fetchNutrients(for: englishName) {
+            case .success(let perHundredGrams):
                 let scale = scaleFactor(quantity: ingredient.quantity, unit: ingredient.unit)
                 total.calories += perHundredGrams.calories * scale
                 total.proteins += perHundredGrams.proteins * scale
                 total.carbs += perHundredGrams.carbs * scale
                 total.fats += perHundredGrams.fats * scale
+                fetched += 1
+            case .notFound:
+                break // La API respondió pero no encontró ese alimento; se ignora
+            case .networkError:
+                networkError = true
             }
         }
         
-        return total
+        return NutritionResult(info: total, fetched: fetched, total: ingredients.count, networkError: networkError)
     }
     
     // MARK: - Traducción con Apple Translation
@@ -157,31 +172,45 @@ class NutritionService {
     }
     
     // MARK: - Llamada a la API de USDA
-    private static func fetchNutrients(for foodName: String) async -> NutritionInfo? {
+    private enum FetchOutcome {
+        case success(NutritionInfo)
+        case notFound  // La API respondió pero sin resultados
+        case networkError  // No se pudo conectar
+    }
+    
+    private static func fetchNutrients(for foodName: String) async -> FetchOutcome {
         let encoded = foodName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? foodName
         let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(encoded)&pageSize=1&api_key=\(apiKey)"
         
-        guard let url = URL(string: urlString) else { return nil }
+        guard let url = URL(string: urlString) else { return .notFound }
         
         do {
-            let (data, _) = try await URLSession.shared.data(from:url)
+            let (data, _) = try await URLSession.shared.data(from: url)
             let decoded = try JSONDecoder().decode(USDAResponse.self, from: data)
-            guard let food = decoded.foods.first else { return nil }
+            guard let food = decoded.foods.first else { return .notFound }
             
-            // Buscar los 4 nutrientes por su ID de USDA
             var info = NutritionInfo()
             for nutrient in food.foodNutrients {
                 switch nutrient.nutrientId {
-                case 1008: info.calories = nutrient.value ?? 0 // Energía (kcal)
-                case 1003: info.proteins = nutrient.value ?? 0 // Proteínas (g)
-                case 1005: info.carbs = nutrient.value ?? 0 // Carbohidratos (g)
-                case 1004: info.fats = nutrient.value ?? 0 // Grasas (g)
+                case 1008: info.calories = nutrient.value ?? 0  // Energía (kcal)
+                case 1003: info.proteins = nutrient.value ?? 0  // Proteínas (g)
+                case 1005: info.carbs = nutrient.value ?? 0  // Carbohidratos (g)
+                case 1004: info.fats = nutrient.value ?? 0  // Grasas (g)
                 default: break
                 }
             }
-            return info
+            return .success(info)
+        } catch let error as URLError {
+            // Fallos de conexión (sin internet, timeout, ...)
+            switch error.code {
+            case .notConnectedToInternet, .timedOut, .cannotConnectToHost,
+                    .networkConnectionLost, .cannotFindHost, .dataNotAllowed:
+                return .networkError
+            default:
+                return .notFound
+            }
         } catch {
-            return nil // Si falla, ignoramos ese ingrediente
+            return .notFound // Error de decodificación u otro: se ignora
         }
     }
     
