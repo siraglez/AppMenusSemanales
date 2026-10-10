@@ -12,36 +12,38 @@ import SwiftData
 
 struct ShoppingListView: View {
     @Environment(\.modelContext) var context
-    
-    // Datos del Menú
+
     @Query var allMenus: [WeeklyMenu]
-    @State private var selectedDate = Date()
-    
-    // Datos Manuales
+    // Semana compartida con el Planificador
+    @Binding var selectedDate: Date
+
     @Query var extraItems: [ExtraItem]
     @Query var familyMembers: [FamilyMember]
-    
-    // Estado de la interfaz
+
     @State private var checkedItems: Set<String> = []
     @State private var isCompletedExpanded: Bool = false
     @State private var showAddSheet: Bool = false
-    
+
+    let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+
     var dinersCount: Int {
         1 + familyMembers.filter { $0.isAtHome }.count
     }
-    
+
     // MARK: CÁLCULO INTELIGENTE DE LA LISTA
-    
     var fullShoppingList: [IngredientGroup] {
-        var totals: [String: (Double, String, Bool)] = [:] // Bool indica si es borrable (manual)
-        
-        // 1. Sumar ingredientes del MENÚ (Automático)
+        var totals: [String: (Double, String, Bool)] = [:]
+
+        // 1. Ingredientes del MENÚ de la semana seleccionada (ahora con año)
         let calendar = Calendar.current
         let weekOfYear = calendar.component(.weekOfYear, from: selectedDate)
-        let menus = allMenus.filter { calendar.component(.weekOfYear, from: $0.date) == weekOfYear }
-        
+        let year = calendar.component(.yearForWeekOfYear, from: selectedDate)
+        let menus = allMenus.filter {
+            calendar.component(.weekOfYear, from: $0.date) == weekOfYear &&
+            calendar.component(.yearForWeekOfYear, from: $0.date) == year
+        }
+
         for menu in menus {
-            // Comida: escalamos cada ingrediente según las personas base de la receta
             if let lunch = menu.lunch {
                 let factor = servingsFactor(for: lunch)
                 for ing in lunch.ingredients {
@@ -49,7 +51,6 @@ struct ShoppingListView: View {
                                   qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }
             }
-            // Cena: igual
             if let dinner = menu.dinner {
                 let factor = servingsFactor(for: dinner)
                 for ing in dinner.ingredients {
@@ -58,30 +59,27 @@ struct ShoppingListView: View {
                 }
             }
         }
-        
-        // 2. Sumar ítems MANUALES (Extra)
+
+        // 2. Ítems MANUALES (no se escalan)
         for item in extraItems {
             addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: item.unit, isManual: true)
         }
-        
-        // 3. Convertir a lista final
+
         return totals.map { key, value in
             IngredientGroup(name: key, totalQuantity: value.0, unit: value.1, isManual: value.2)
         }.sorted { $0.name < $1.name }
     }
-    // Factor de escala de una receta según los comensales
+
     func servingsFactor(for recipe: Recipe) -> Double {
-        let base = max(recipe.baseServings, 1)   // evitar división por cero
+        let base = max(recipe.baseServings, 1)
         return Double(dinersCount) / Double(base)
     }
-    
+
     var pendingItems: [IngredientGroup] { fullShoppingList.filter { !isChecked($0.name) } }
     var completedItems: [IngredientGroup] { fullShoppingList.filter { isChecked($0.name) } }
-    
-    // Función auxiliar para sumar cantidades
+
     func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
         let key = name.lowercased().capitalized
-        
         if let existing = totals[key] {
             if existing.1 == unit {
                 totals[key] = (existing.0 + qty, existing.1, existing.2 || isManual)
@@ -93,13 +91,36 @@ struct ShoppingListView: View {
             totals[key] = (qty, unit, isManual)
         }
     }
-    
+
     // MARK: VISTA
-    
     var body: some View {
         NavigationStack {
             List {
-                // Comensales (automático, solo informativo)
+                // Semana (compartida con el Planificador)
+                Section {
+                    HStack {
+                        Button { moveWeek(by: -1) } label: {
+                            Image(systemName: "chevron.left.circle.fill").font(.title3)
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.gray)
+
+                        Spacer()
+                        VStack {
+                            Text(weekLabel).font(.subheadline).fontWeight(.medium)
+                            Text(dateRangeLabel).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+
+                        Button { moveWeek(by: 1) } label: {
+                            Image(systemName: "chevron.right.circle.fill").font(.title3)
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.blue)
+                    }
+                }
+
+                // Comensales (automático)
                 Section {
                     HStack {
                         Label("Comensales", systemImage: "person.2.fill")
@@ -109,18 +130,19 @@ struct ShoppingListView: View {
                             .foregroundStyle(.blue)
                     }
                 } footer: {
-                    Text("Se calcula automáticamente: tu + los miembros marcados como 'en casa' en Grupo Familiar. Las cantidades del menú se ajustan a este número.")
+                    Text("Se calcula automáticamente: tú + los miembros marcados como 'en casa' en Grupo Familiar. Las cantidades del menú se ajustan a este número.")
                 }
-                
+
                 if fullShoppingList.isEmpty {
-                    ContentUnavailableView("Lista vacía", systemImage: "cart", description: Text("Añade productos manualmente o genera un menú."))
+                    Section {
+                        Text("Añade productos manualmente o genera un menú para esta semana.")
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
-                    // SECCIÓN PENDIENTES
                     if !pendingItems.isEmpty {
                         Section(header: Text("Pendiente (\(pendingItems.count))")) {
                             ForEach(pendingItems) { item in
                                 ShoppingRow(item: item, isChecked: false) { toggleItem(item.name) }
-                                // Solo permitimos borrar si es manual (Swipe to delete)
                                     .swipeActions {
                                         if item.isManual {
                                             Button("Borrar", role: .destructive) { deleteManualItem(name: item.name) }
@@ -131,8 +153,7 @@ struct ShoppingListView: View {
                     } else if !completedItems.isEmpty {
                         Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green) }
                     }
-                    
-                    // SECCIÓN COMPLETADOS
+
                     if !completedItems.isEmpty {
                         Section {
                             DisclosureGroup(
@@ -155,7 +176,6 @@ struct ShoppingListView: View {
             }
             .navigationTitle("Lista de Compra")
             .toolbar {
-                // BOTÓN DE AÑADIR (+)
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showAddSheet = true }) {
                         Image(systemName: "plus")
@@ -163,37 +183,55 @@ struct ShoppingListView: View {
                 }
             }
             .sheet(isPresented: $showAddSheet) {
-                AddExtraItemView() // El formulario para añadir
-                    .presentationDetents([.medium])
+                AddExtraItemView().presentationDetents([.medium])
             }
             .onAppear { loadChecks() }
         }
     }
-    
-    // MARK: LÓGICA DE BORRADO MANUAL
+
+    // MARK: NAVEGACIÓN DE SEMANA
+    func moveWeek(by value: Int) {
+        if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: value, to: selectedDate) {
+            selectedDate = newDate
+        }
+    }
+
+    var weekLabel: String {
+        Calendar.current.isDateInThisWeek(selectedDate) ? "Esta Semana" :
+        "Semana \(Calendar.current.component(.weekOfYear, from: selectedDate))"
+    }
+
+    var dateRangeLabel: String {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)) ?? selectedDate
+        let endOfWeek = calendar.date(byAdding: .day, value: 6, to: startOfWeek) ?? selectedDate
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        return "\(formatter.string(from: startOfWeek)) - \(formatter.string(from: endOfWeek))"
+    }
+
+    // MARK: BORRADO MANUAL
     func deleteManualItem(name: String) {
-        // Buscamos items manuales con ese nombre y los borramos de la BD
         let itemsToDelete = extraItems.filter { $0.name.lowercased().capitalized == name }
         for item in itemsToDelete {
             context.delete(item)
         }
-        // Si estaba marcado, lo quitamos de la memoria también
         if checkedItems.contains(name) {
             checkedItems.remove(name)
             saveChecks()
         }
     }
-    
-    // MARK: LÓGICA DE CHECKS
+
+    // MARK: CHECKS
     func isChecked(_ name: String) -> Bool { checkedItems.contains(name) }
-    
+
     func toggleItem(_ name: String) {
         withAnimation(.snappy) {
             if checkedItems.contains(name) { checkedItems.remove(name) } else { checkedItems.insert(name) }
         }
         saveChecks()
     }
-    
+
     func saveChecks() { UserDefaults.standard.set(Array(checkedItems), forKey: "savedShoppingChecks") }
     func loadChecks() { if let saved = UserDefaults.standard.array(forKey: "savedShoppingChecks") as? [String] { checkedItems = Set(saved) } }
 }
@@ -203,7 +241,7 @@ struct ShoppingRow: View {
     let item: IngredientGroup
     let isChecked: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
@@ -233,12 +271,12 @@ struct ShoppingRow: View {
 struct AddExtraItemView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) var context
-    
+
     @State private var name = ""
     @State private var quantity = ""
     @State private var unit = "ud"
     let units = ["ud", "kg", "g", "L", "ml", "paquete", "bote"]
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -270,7 +308,6 @@ struct AddExtraItemView: View {
     }
 }
 
-// Estructura auxiliar mejorada
 struct IngredientGroup: Identifiable {
     let id = UUID()
     let name: String

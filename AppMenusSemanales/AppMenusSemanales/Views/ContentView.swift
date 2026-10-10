@@ -10,32 +10,29 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 2
+    // Semana compartida entre el Planificador y la Lista de la compra
+    @State private var selectedWeek = Date()
     
     var body: some View {
-        // Usar un TabView para tener navegación abajo
         TabView(selection: $selectedTab) {
-            // Pestaña 1: Recetas
             RecipeListView()
                 .tabItem {
                     Label("Recetas", systemImage: "fork.knife")
                 }
                 .tag(1)
             
-            // Pestaña 2: Planificador (PANTALLA PRINCIPAL POR DEFECTO)
-            WeeklyPlanView(selectedTab: $selectedTab)
+            WeeklyPlanView(selectedTab: $selectedTab, selectedDate: $selectedWeek)
                 .tabItem {
                     Label("Planificador", systemImage: "calendar")
                 }
                 .tag(2)
             
-            // Pestaña 3: Lista de la compra
-            ShoppingListView()
+            ShoppingListView(selectedDate: $selectedWeek)
                 .tabItem {
                     Label("Compra", systemImage: "cart")
                 }
                 .tag(3)
             
-            // Pestaña 4: Perfil
             ProfileView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.circle")

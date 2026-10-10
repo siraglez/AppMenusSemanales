@@ -22,7 +22,7 @@ struct WeeklyPlanView: View {
     
     @Binding var selectedTab: Int
     
-    @State private var selectedDate = Date()
+    @State private var selectedDate: Date
     @State private var showRegenerateAlert = false
     @State private var selectedSeason: Season = .all
     @State private var showNotEnoughAlert = false
