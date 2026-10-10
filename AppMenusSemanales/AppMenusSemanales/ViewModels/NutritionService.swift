@@ -19,7 +19,7 @@ struct NutritionInfo {
 
 class NutritionService {
     
-    private static let apiKey = "zXr5QO3c0pMJmlanghvKyBxeJ330IJeGoibzkdeA"
+    private static let apiKey = AppSecrets.usdaAPIKey
     
     private static var translationCache: [String: String] = [:]
     
