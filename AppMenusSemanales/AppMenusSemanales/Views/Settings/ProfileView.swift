@@ -4,85 +4,58 @@
 //
 //  Created by Sira Gonzalez-Madroño
 //
-// Pantalla de perfil del usuario con ajustes
-//
-//  Sección "Mis Preferencias" que navega a PreferencesEditorView
-//  para que el usuario pueda editar sus alergias/intolerancias/gustos en cualquier momento
+// Pantalla de perfil: nombre, preferencias, recetas fijas y grupo familiar.
+// La app no tiene cuentas: los datos son locales
 
 import SwiftUI
-import SwiftData
 
 struct ProfileView: View {
-    @Query var users: [UserProfile]
-    @Environment(\.modelContext) var context
-    @AppStorage("isLoggedIn") var isLoggedIn: Bool = true
+    @AppStorage("myName") var myName: String = ""
     
     var body: some View {
         NavigationStack {
             Form {
-                if let user = users.first {
-                    
-                    // ── Datos del usuario ──
-                    Section("Mis Datos") {
-                        Text("\(user.name) \(user.surname)")
-                            .font(.headline)
-                        Text(user.email)
-                            .foregroundStyle(.secondary)
-                        Text("Miembro desde: \(user.registerDate.formatted(date: .abbreviated, time: .omitted))")
+                // - Nombre -
+                Section {
+                    TextField("Tu nombre (opcional)", text: $myName)
+                } header: {
+                    Text("Mi nombre")
+                } footer: {
+                    Text("Se usa para identificar tus avisos en el menú familiar. Si lo dejas vacío, apareceras como \"Tú\".")
+                }
+                
+                // - Preferencias alimentarias -
+                Section("Preferencias Alimentarias") {
+                    NavigationLink(destination: PreferencesEditorView()
+                        .navigationTitle("Mis Preferencias")
+                        .navigationBarTitleDisplayMode(.inline)
+                    ) {
+                        Label("Alergias, intolerancias y gustos", systemImage: "heart.text.square")
                     }
-                    
-                    // ── Preferencias alimentarias ──
-                    Section("Preferencias Alimentarias") {
-                        NavigationLink(destination: PreferencesEditorView()
-                            .navigationTitle("Mis Preferencias")
-                            .navigationBarTitleDisplayMode(.inline)
-                        ) {
-                            Label("Alergias, intolerancias y gustos", systemImage: "heart.text.square")
-                        }
-                    }
-                    
-                    // ── Recetas fijas ──
-                    Section("Recetas Fijas") {
-                        NavigationLink(destination: FixedRecipesEditorView()
-                            .navigationTitle("Recetas Fijas")
-                            .navigationBarTitleDisplayMode(.inline)
-                        ) {
-                            Label("Recetas fijas por día", systemImage: "pin")
-                        }
-                    }
-                    
-                    // ── Grupo Familiar ──
-                    Section("Grupo Familiar") {
-                        NavigationLink(destination: FamilyMembersEditorView()) {
-                            Label("Miembros de la familia", systemImage: "person.3")
-                        }
-                    }
-                    
-                    // ── Cuenta ──
-                    Section("Cuenta") {
-                        Button("Cerrar Sesión", role: .destructive) {
-                            isLoggedIn = false
-                        }
-                        Button("Borrar Cuenta y Datos", role: .destructive) {
-                            deleteAccount(user: user)
-                        }
-                    }
-                    
-                } else {
-                    Text("No se encontró usuario")
+                }
+                
+                // - Recetas fijas -
+                    Section("Recetas Fijas")
+                NavigationLink(destination: FixedRecipesEditorView()
+                    .navigationTitle("Recetas Fijas")
+                    .navigationBarTitleDisplayMode(.inline)
+                ) {
+                    Label("Recetas fijas por día", systemImage: "pin")
                 }
             }
-            .navigationTitle("Perfil")
-            .toolbar {
-                NavigationLink(destination: SettingsView()) {
-                    Image(systemName: "gear")
+            
+            // - Grupo familiar -
+            Section("Grupo Familiar") {
+                NavigationLink(destination: FamilyMembersEditorView()) {
+                    Label("Miembros de la familia", systemImage: "person.3")
                 }
             }
         }
-    }
-    
-    func deleteAccount(user: UserProfile) {
-        context.delete(user)
-        isLoggedIn = false
+        .navigationTitle("Perfil")
+        .toolbar {
+            NavigationLink(destination: SettingsView()) {
+                Image(systemName: "gear")
+            }
+        }
     }
 }

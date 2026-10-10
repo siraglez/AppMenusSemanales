@@ -6,47 +6,34 @@
 //
 // El arranque de la app
 //
-//  LÓGICA DE NAVEGACIÓN INICIAL:
-//  ┌─────────────────────────────────────────────────────┐
-//  │ ¿isLoggedIn?                                        │
-//  │   NO  → LoginView                                   │
-//  │   SÍ  → ¿needsPreferencesSetup?                     │
-//  │           SÍ → OnboardingPreferencesView (1ª vez)   │
-//  │           NO → ContentView (app normal)             │
-//  └─────────────────────────────────────────────────────┘
+// NAVEGACIÓN INICIAL:
+// - Primera vez (didCompleteOnboarding == false) -> OnboardingPreferencesView
+// - A partir de entonces -> ContentView
 //
-//  needsPreferencesSetup se activa a true en RegisterView
-//  y se desactiva a false en OnboardingPreferencesView
+// La app no tiene cuentas de usuario: todos los datos son locales.
+// (El inicio de sesión con Apple se añadirá más adelante).
 
 import SwiftUI
 import SwiftData
 
 @main
 struct AppMenusSemanalesApp: App {
-    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
-    @AppStorage("needsPreferencesSetup") var needsPreferencesSetup: Bool = false
-    @AppStorage("appAppearance")
-    var appAppearanceRaw: String = AppAppearance.system.rawValue
+    @AppStorage("didCompleteOnboarding") var didCompleteOnboarding: Bool = false
+    @AppStorage("appAppearance") var appAppearanceRaw: String = AppAppearance.system.rawValue
     
     var body: some Scene {
         WindowGroup {
             Group {
-                if isLoggedIn {
-                    if needsPreferencesSetup {
-                        OnboardingPreferencesView()
-                    } else {
-                        ContentView()
-                    }
+                if didCompleteOnboarding {
+                    ContentView()
                 } else {
-                    LoginView()
+                    OnboardingPreferencesView()
                 }
             }
             .preferredColorScheme(AppAppearance(rawValue: appAppearanceRaw)?.colorScheme)
         }
-        // Crear el archivo de base de datos automáticamente
         .modelContainer(for: [
             Recipe.self,
-            UserProfile.self,
             WeeklyMenu.self,
             ExtraItem.self,
             UserPreferences.self,

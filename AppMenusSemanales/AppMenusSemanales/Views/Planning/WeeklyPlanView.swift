@@ -18,7 +18,7 @@ struct WeeklyPlanView: View {
     @Query var userPreferences: [UserPreferences]
     @Query var fixedAssignments: [FixedAssignment]
     @Query var familyMembers: [FamilyMember]
-    @Query var users: [UserProfile]
+    @AppStorage("myName") var myName: String = ""
     
     @Binding var selectedTab: Int
     
@@ -42,7 +42,6 @@ struct WeeklyPlanView: View {
         
         // Usuario principal (preferencias globales, member == nil)
         if let global = userPreferences.first(where: { $0.member == nil}) {
-            let myName = users.first?.name ?? ""
             list.append((myName.isEmpty ? "Tú" : myName, global))
         }
         // Miembros en casa con sus propias preferencias
