@@ -35,26 +35,27 @@ struct ProfileView: View {
                 }
                 
                 // - Recetas fijas -
-                    Section("Recetas Fijas")
-                NavigationLink(destination: FixedRecipesEditorView()
-                    .navigationTitle("Recetas Fijas")
-                    .navigationBarTitleDisplayMode(.inline)
-                ) {
-                    Label("Recetas fijas por día", systemImage: "pin")
+                Section("Recetas Fijas") {
+                    NavigationLink(destination: FixedRecipesEditorView()
+                        .navigationTitle("Recetas Fijas")
+                        .navigationBarTitleDisplayMode(.inline)
+                    ) {
+                        Label("Recetas fijas por día", systemImage: "pin")
+                    }
+                }
+                
+                // - Grupo familiar -
+                Section("Grupo Familiar") {
+                    NavigationLink(destination: FamilyMembersEditorView()) {
+                        Label("Miembros de la familia", systemImage: "person.3")
+                    }
                 }
             }
-            
-            // - Grupo familiar -
-            Section("Grupo Familiar") {
-                NavigationLink(destination: FamilyMembersEditorView()) {
-                    Label("Miembros de la familia", systemImage: "person.3")
+            .navigationTitle("Perfil")
+            .toolbar {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gear")
                 }
-            }
-        }
-        .navigationTitle("Perfil")
-        .toolbar {
-            NavigationLink(destination: SettingsView()) {
-                Image(systemName: "gear")
             }
         }
     }
