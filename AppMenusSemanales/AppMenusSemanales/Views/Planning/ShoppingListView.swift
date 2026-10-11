@@ -10,39 +10,41 @@
 import SwiftUI
 import SwiftData
 
-struct ShoppingListView: View {
+struct ShopingListView: View {
     @Environment(\.modelContext) var context
-
+    
     @Query var allMenus: [WeeklyMenu]
-    // Semana compartida con el Planificador
     @Binding var selectedDate: Date
-
+    
     @Query var extraItems: [ExtraItem]
     @Query var familyMembers: [FamilyMember]
-
+    
+    // Espacio activo (compartido con el Planificador)
+    @AppStorage("currentSpace") var currentSpaceRaw: String = MenuSpace.familiar.rawValue
+    var currentSpace: MenuSpace { MenuSpace(rawValue: currentSpaceRaw) ?? .familiar }
+    
     @State private var checkedItems: Set<String> = []
     @State private var isCompletedExpanded: Bool = false
     @State private var showAddSheet: Bool = false
-
-    let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-
+    
+    // Comensales. En el espacio personal solo tú; en el familiar, tú + los que están en casa
     var dinersCount: Int {
-        1 + familyMembers.filter { $0.isAtHome }.count
+        currentSpace == .familiar ? 1 + familyMembers.filter { $0.isAtHome }.count : 1
     }
-
-    // MARK: CÁLCULO INTELIGENTE DE LA LISTA
+    
+    // MARK: CÁLCULO DE LA LISTA
     var fullShoppingList: [IngredientGroup] {
         var totals: [String: (Double, String, Bool)] = [:]
-
-        // 1. Ingredientes del MENÚ de la semana seleccionada (ahora con año)
+        
+        // 1. Ingredientes del MENÚ de la semana seleccionada y del espacio activo
         let calendar = Calendar.current
         let weekOfYear = calendar.component(.weekOfYear, from: selectedDate)
         let year = calendar.component(.yearForWeekOfYear, from: selectedDate)
         let menus = allMenus.filter {
             calendar.component(.weekOfYear, from: $0.date) == weekOfYear &&
-            calendar.component(.yearForWeekOfYear, from: $0.date) == year
+            calendar.component(.yearForWeekOfYear, from: $0.date) == year && $0.space == currentSpace
         }
-
+        
         for menu in menus {
             if let lunch = menu.lunch {
                 let factor = servingsFactor(for: lunch)
@@ -52,32 +54,32 @@ struct ShoppingListView: View {
                 }
             }
             if let dinner = menu.dinner {
-                let factor = servingsFactor(for: dinner)
+                let factor = servingsFactor(for:dinner)
                 for ing in dinner.ingredients {
                     addIngredient(to: &totals, name: ing.name,
                                   qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }
             }
         }
-
-        // 2. Ítems MANUALES (no se escalan)
-        for item in extraItems {
-            addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: item.unit, isManual: true)
+        
+        // 2. Productos MANUALES del espacio activo (no se escalan)
+        for item in extraItems where item.space == currentSpace {
+            addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: ing.unit, isManual: true)
         }
-
+        
         return totals.map { key, value in
             IngredientGroup(name: key, totalQuantity: value.0, unit: value.1, isManual: value.2)
         }.sorted { $0.name < $1.name }
     }
-
+    
     func servingsFactor(for recipe: Recipe) -> Double {
         let base = max(recipe.baseServings, 1)
         return Double(dinersCount) / Double(base)
     }
-
+    
     var pendingItems: [IngredientGroup] { fullShoppingList.filter { !isChecked($0.name) } }
     var completedItems: [IngredientGroup] { fullShoppingList.filter { isChecked($0.name) } }
-
+    
     func addIngredient(to totals: inout [String: (Double, String, Bool)], name: String, qty: Double, unit: String, isManual: Bool) {
         let key = name.lowercased().capitalized
         if let existing = totals[key] {
@@ -91,7 +93,7 @@ struct ShoppingListView: View {
             totals[key] = (qty, unit, isManual)
         }
     }
-
+    
     // MARK: VISTA
     var body: some View {
         NavigationStack {
@@ -100,18 +102,18 @@ struct ShoppingListView: View {
                 Section {
                     HStack {
                         Button { moveWeek(by: -1) } label: {
-                            Image(systemName: "chevron.left.circle.fill").font(.title3)
+                            Image(systemName: "chevron.left.circe.fill").font(.title3)
                         }
-                        .buttonStyle(.borderless)
+                        .buttonStyle(.boderless)
                         .foregroundStyle(.gray)
-
+                        
                         Spacer()
                         VStack {
                             Text(weekLabel).font(.subheadline).fontWeight(.medium)
                             Text(dateRangeLabel).font(.caption2).foregroundStyle(.secondary)
                         }
                         Spacer()
-
+                        
                         Button { moveWeek(by: 1) } label: {
                             Image(systemName: "chevron.right.circle.fill").font(.title3)
                         }
@@ -119,7 +121,7 @@ struct ShoppingListView: View {
                         .foregroundStyle(.blue)
                     }
                 }
-
+                
                 // Comensales (automático)
                 Section {
                     HStack {
@@ -130,9 +132,11 @@ struct ShoppingListView: View {
                             .foregroundStyle(.blue)
                     }
                 } footer: {
-                    Text("Se calcula automáticamente: tú + los miembros marcados como 'en casa' en Grupo Familiar. Las cantidades del menú se ajustan a este número.")
+                    Text(currentSpace == .familiar
+                    ? "Espacio familiar: tú + los miembros marcados como 'en casa'. Las cantidades del menú se ajustan a este número."
+                         : "Espacio personal: las cantidades se calculan solo para ti.")
                 }
-
+                
                 if fullShoppingList.isEmpty {
                     Section {
                         Text("Añade productos manualmente o genera un menú para esta semana.")
@@ -142,7 +146,7 @@ struct ShoppingListView: View {
                     if !pendingItems.isEmpty {
                         Section(header: Text("Pendiente (\(pendingItems.count))")) {
                             ForEach(pendingItems) { item in
-                                ShoppingRow(item: item, isChecked: false) { toggleItem(item.name) }
+                                ShoppingRow(item: item, isChecked: false) { toggleItem(item.name) }
                                     .swipeActions {
                                         if item.isManual {
                                             Button("Borrar", role: .destructive) { deleteManualItem(name: item.name) }
@@ -151,9 +155,9 @@ struct ShoppingListView: View {
                             }
                         }
                     } else if !completedItems.isEmpty {
-                        Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green) }
+                        Section { Text("¡Todo comprado! 🎉").frame(maxWidth: .infinity, alignment: .center).foregroundStyle(.green)
+                        }
                     }
-
                     if !completedItems.isEmpty {
                         Section {
                             DisclosureGroup(
@@ -177,30 +181,29 @@ struct ShoppingListView: View {
             .navigationTitle("Lista de Compra")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showAddSheet = true }) {
+                    Button(action: { showAddSheet = true}) {
                         Image(systemName: "plus")
                     }
                 }
             }
             .sheet(isPresented: $showAddSheet) {
-                AddExtraItemView().presentationDetents([.medium])
+                AddExtraItemView(space: currentSpace).presentationDetents([.medium])
             }
             .onAppear { loadChecks() }
         }
     }
-
+    
     // MARK: NAVEGACIÓN DE SEMANA
     func moveWeek(by value: Int) {
         if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: value, to: selectedDate) {
             selectedDate = newDate
         }
     }
-
+    
     var weekLabel: String {
-        Calendar.current.isDateInThisWeek(selectedDate) ? "Esta Semana" :
-        "Semana \(Calendar.current.component(.weekOfYear, from: selectedDate))"
+        Calendar.current.isDateInThisWeek(selectedDate) ? "Esta Semana" : "Semana \(Calendar.current.component(.weekOfYear, from: selectedDate))"
     }
-
+    
     var dateRangeLabel: String {
         let calendar = Calendar.current
         let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)) ?? selectedDate
@@ -209,10 +212,12 @@ struct ShoppingListView: View {
         formatter.dateFormat = "d MMM"
         return "\(formatter.string(from: startOfWeek)) - \(formatter.string(from: endOfWeek))"
     }
-
+    
     // MARK: BORRADO MANUAL
     func deleteManualItem(name: String) {
-        let itemsToDelete = extraItems.filter { $0.name.lowercased().capitalized == name }
+        let itemsToDelete = extraItems.filter {
+            $0.name.lowercased().capitalized == name && $0.space == currentSpace
+        }
         for item in itemsToDelete {
             context.delete(item)
         }
@@ -221,17 +226,17 @@ struct ShoppingListView: View {
             saveChecks()
         }
     }
-
+    
     // MARK: CHECKS
     func isChecked(_ name: String) -> Bool { checkedItems.contains(name) }
-
+    
     func toggleItem(_ name: String) {
         withAnimation(.snappy) {
             if checkedItems.contains(name) { checkedItems.remove(name) } else { checkedItems.insert(name) }
         }
         saveChecks()
     }
-
+    
     func saveChecks() { UserDefaults.standard.set(Array(checkedItems), forKey: "savedShoppingChecks") }
     func loadChecks() { if let saved = UserDefaults.standard.array(forKey: "savedShoppingChecks") as? [String] { checkedItems = Set(saved) } }
 }
@@ -241,7 +246,7 @@ struct ShoppingRow: View {
     let item: IngredientGroup
     let isChecked: Bool
     let action: () -> Void
-
+    
     var body: some View {
         Button(action: action) {
             HStack {
@@ -267,16 +272,19 @@ struct ShoppingRow: View {
     }
 }
 
-// --- SUBVISTA: FORMULARIO PARA AÑADIR ---
+// --- SUBVISTA: FORMULARIO PARA AÑADIR
 struct AddExtraItemView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) var context
-
+    
+    // Espacio al que se añadirá el producto
+    let space: MenuSpace
+    
     @State private var name = ""
     @State private var quantity = ""
     @State private var unit = "ud"
     let units = ["ud", "kg", "g", "L", "ml", "paquete", "bote"]
-
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -298,6 +306,7 @@ struct AddExtraItemView: View {
                     Button("Añadir") {
                         let qty = Double(quantity.replacingOccurrences(of: ",", with: ".")) ?? 1.0
                         let newItem = ExtraItem(name: name, quantity: qty, unit: unit)
+                        newItem.space = space // Marcar con el espacio activo
                         context.insert(newItem)
                         dismiss()
                     }

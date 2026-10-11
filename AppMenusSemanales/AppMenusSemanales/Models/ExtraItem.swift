@@ -16,6 +16,11 @@ class ExtraItem {
     var quantity: Double = 0
     var unit: String = ""
     var dateAdded: Date = Date()
+    var spaceRaw: String = MenuSpace.familiar.rawValue
+    var space: MenuSpace {
+        get { MenuSpace(rawValue: spaceRaw) ?? .familiar }
+        set { spaceRaw = newValue.rawValue }
+    }
     
     init(name: String, quantity: Double, unit: String) {
         self.id = UUID()

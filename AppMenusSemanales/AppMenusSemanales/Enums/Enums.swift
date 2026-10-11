@@ -68,3 +68,13 @@ enum WeekAvailability: String, CaseIterable, Codable, Identifiable {
     
     var id: String { self.rawValue }
 }
+
+// Espacio al que pertenece un menú, receta fija o producto de la lista:
+// El familiar (compartido en casa) o el personal (propio).
+// El recetario es común a ambos; solo se separan menús, recetas fijas y lista.
+enum MenuSpace: String, CaseIterable, Identifiable {
+    case familiar = "Familiar"
+    case personal = "Personal"
+    
+    var id: String { self.rawValue }
+}

@@ -15,6 +15,11 @@ class FixedAssignment {
     var id: UUID = UUID()
     var dayName: String = ""
     var mealType: String = ""
+    var spaceRaw: String = MenuSpace.familiar.rawValue
+    var space: MenuSpace {
+        get { MenuSpace(rawValue: spaceRaw) ?? .familiar }
+        set { spaceRaw = newValue.rawValue }
+    }
     
     // Si se borra la receta, la asignación queda sin receta en vez de romperse
     @Relationship(deleteRule: .nullify, inverse: \Recipe.fixedAssignments)

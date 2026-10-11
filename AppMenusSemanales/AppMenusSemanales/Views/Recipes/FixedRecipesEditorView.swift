@@ -18,12 +18,15 @@ struct FixedRecipesEditorView: View {
     @Query(sort: \Recipe.name) var allRecipes: [Recipe]
     @Query var fixedAssignments: [FixedAssignment]
     
+    @AppStorage("currentSpace") var currentSpaceRaw: String = MenuSpace.familiar.rawValue
+    var currentSpace: MenuSpace { MenuSpace(rawValue: currentSpaceRaw) ?? .familiar }
+    
     let days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
     var body: some View {
         Form {
             Section {
-                Text("Asigna una receta a un día y una ingesta para que el menú la coloque siempre ahí automáticamente")
+                Text("Asigna una receta a un día y una ingesta para que el menú la coloque siempre ahí automáticamente. Estás editando las recetas fijas del espacio \(currentSpace.rawValue.lowercased()).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -44,7 +47,6 @@ struct FixedRecipesEditorView: View {
         }
     }
     
-    // Selector de receta fija para un día + ingesta
     @ViewBuilder
     func fixedPicker(day: String, meal: MealType) -> some View {
         Picker(meal.rawValue, selection: selectionBinding(day: day, meal: meal)) {
@@ -55,36 +57,34 @@ struct FixedRecipesEditorView: View {
         }
     }
     
-    // Receta fija actual para ese hueco (si la hay)
+    // Receta fija actual para ese hueco, en el espacio activo
     func currentRecipe(day: String, meal: MealType) -> Recipe? {
         fixedAssignments.first {
-            $0.dayName == day && $0.mealType == meal.rawValue
+            $0.dayName == day && $0.mealType == meal.rawValue && $0.space == currentSpace
         }?.recipe
     }
     
-    // Binding que crea, actualiza o borra la asignación según lo que elija el usuario
     func selectionBinding(day: String, meal: MealType) -> Binding<UUID?> {
         Binding(
             get: { currentRecipe(day: day, meal: meal)?.id },
             set: { newID in setFixed(day: day, meal: meal, recipeID: newID) }
         )
     }
-    
+        
     func setFixed(day: String, meal: MealType, recipeID: UUID?) {
         let existing = fixedAssignments.first {
-            $0.dayName == day && $0.mealType == meal.rawValue
+            $0.dayName == day && $0.mealType == meal.rawValue && $0.space == currentSpace
         }
         
         if let recipeID, let recipe = allRecipes.first(where: { $0.id == recipeID }) {
-            // Elegida una receta concreta
             if let existing {
                 existing.recipe = recipe
             } else {
-                context.insert(FixedAssignment(
-                    dayName: day, mealType: meal.rawValue, recipe: recipe))
+                let nueva = FixedAssignment(dayName: day, mealType: meal.rawValue, recipe: recipe)
+                nueva.space = currentSpace   // marcar con el espacio activo
+                context.insert(nueva)
             }
         } else {
-            // "Ninguna" → borrar la asignación si existía
             if let existing { context.delete(existing) }
         }
     }

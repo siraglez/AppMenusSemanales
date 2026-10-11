@@ -14,6 +14,11 @@ class WeeklyMenu {
     var id: UUID = UUID()
     var dayName: String = "" // Lunes, Martes...
     var date: Date = Date() // Para saber de qué semana es
+    var spaceRaw: String = MenuSpace.familiar.rawValue // Espacio al que pertenece este menú (familiar o personal)
+    var space: MenuSpace {
+        get { MenuSpace(rawValue: spaceRaw) ?? .familiar }
+        set { spaceRaw = newValue.rawValue }
+    }
     
     @Relationship(deleteRule: .nullify, inverse: \Recipe.menusAsLunch)
     var lunch: Recipe?
