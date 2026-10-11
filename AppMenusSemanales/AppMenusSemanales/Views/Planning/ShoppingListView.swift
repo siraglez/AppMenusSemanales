@@ -10,7 +10,7 @@
 import SwiftUI
 import SwiftData
 
-struct ShopingListView: View {
+struct ShoppingListView: View {
     @Environment(\.modelContext) var context
     
     @Query var allMenus: [WeeklyMenu]
@@ -64,7 +64,7 @@ struct ShopingListView: View {
         
         // 2. Productos MANUALES del espacio activo (no se escalan)
         for item in extraItems where item.space == currentSpace {
-            addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: ing.unit, isManual: true)
+            addIngredient(to: &totals, name: item.name, qty: item.quantity, unit: item.unit, isManual: true)
         }
         
         return totals.map { key, value in
@@ -104,7 +104,7 @@ struct ShopingListView: View {
                         Button { moveWeek(by: -1) } label: {
                             Image(systemName: "chevron.left.circe.fill").font(.title3)
                         }
-                        .buttonStyle(.boderless)
+                        .buttonStyle(.borderless)
                         .foregroundStyle(.gray)
                         
                         Spacer()

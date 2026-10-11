@@ -113,7 +113,7 @@ struct WeeklyPlanView: View {
             }
             .alert("Pocas recetas para la disponibilidad", isPresented: $showAvailabilityAlert) {
                 Button("Ir a añadir recetas") { selectedTab = 1 }
-                Button("Generar igualmente") { generateMenu(ignoreLastWeekRute: true, ignoreAvailability: true) }
+                Button("Generar igualmente") { generateMenu(ignoreLastWeekRule: true, ignoreAvailability: true) }
                 Button("Cancelar", role: .cancel) { }
             } message: {
                 Text("No hay suficientes recetas marcadas como 'entre semana' o 'fin de semana' para cubrir todos los días respetando esa preferencia. Puedes añadir más recetas, o generar el menú usando recetas de fin de semana entre semana (o viceversa).")
@@ -195,7 +195,7 @@ struct WeeklyPlanView: View {
                 }
             }
         }
-        .listStyle(.insertGrouped)
+        .listStyle(.insetGrouped)
     }
     
     @ViewBuilder
@@ -226,7 +226,7 @@ struct WeeklyPlanView: View {
     }
     
     @ViewBuilder
-    func emptySlotRow(melLabel: String, icon: String, iconColor: Color) -> some View {
+    func emptySlotRow(mealLabel: String, icon: String, iconColor: Color) -> some View {
         HStack(alignment: .top) {
             Image(systemName: icon)
                 .foregroundStyle(iconColor.opacity(0.4))
@@ -307,7 +307,7 @@ struct WeeklyPlanView: View {
         let endOfWeek = calendar.date(byAdding: .day, value: 6, to: startOfWeek) ?? selectedDate
         
         let formatter = DateFormatter()
-        formatter.dateformat = "d MMM"
+        formatter.dateFormat = "d MMM"
         return "\(formatter.string(from: startOfWeek)) - \(formatter.string(from: endOfWeek))"
     }
     
@@ -317,7 +317,7 @@ struct WeeklyPlanView: View {
         }
     }
     
-    func generateMenu(ignoreLasWeekRule: Bool = false, ignoreAvailability: Bool = false) {
+    func generateMenu(ignoreLastWeekRule: Bool = false, ignoreAvailability: Bool = false) {
         let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
         
         let candidates = allRecipes.filter { !excluded.contains($0.id) }
