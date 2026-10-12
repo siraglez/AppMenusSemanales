@@ -14,7 +14,8 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) var context
     
-    var recipeToEdit: Recipe?
+    var recipeToEdit: Recipe
+    var newRecipeSpace: MenuSpace = .familiar
     
     @State private var name: String = ""
     @State private var instructions: String = ""
@@ -225,6 +226,7 @@ struct AddRecipeView: View {
             newRecipe.carbs = nutrition?.carbs
             newRecipe.fats = nutrition?.fats
             newRecipe.category = pendingCategory
+            newRecipe.space = newRecipeSpace
             context.insert(newRecipe)
         }
         dismiss()

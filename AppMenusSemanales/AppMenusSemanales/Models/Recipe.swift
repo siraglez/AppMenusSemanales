@@ -24,6 +24,11 @@ class Recipe {
     var categoryRaw: String = RecipeCategory.other.rawValue
     var weekAvailabilityRaw: String = WeekAvailability.any.rawValue
     var baseServings: Int = 2
+    var spaceRaw: String = MenuSpace.familiar.rawValue
+    var space: MenuSpace {
+        get { MenuSpace(rawValue: spaceRaw) ?? .familiar }
+        set { spaceRaw = newValue.rawValue }
+    }
     
     // Datos nutricionales
     var calories: Double?

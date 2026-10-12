@@ -53,6 +53,9 @@ struct WeeklyPlanView: View {
     }
     
     // Alergias combinadas de todos los comensales
+    // Recetas del espacio activo (el recetario está separado por espacio)
+    var spaceRecipes: [Recipe] { allRecipes.filter { $0.space == currentSpace } }
+    
     var combinedAllergies: [String] {
         var set = Set<String>()
         for eater in eaters { set.formUnion(eater.prefs.allergies) }
@@ -264,7 +267,7 @@ struct WeeklyPlanView: View {
                 
                 Button("Generar Menú Ahora") { generateMenu() }
                     .buttonStyle(.borderedProminent)
-                    .disabled(allRecipes.count < 2)
+                    .disabled(spaceRecipes.count < 2)
             }
         }
     }
@@ -320,17 +323,17 @@ struct WeeklyPlanView: View {
     func generateMenu(ignoreLastWeekRule: Bool = false, ignoreAvailability: Bool = false) {
         let excluded = ignoreLastWeekRule ? [] : lastWeekExcludedIDs
         
-        let candidates = allRecipes.filter { !excluded.contains($0.id) }
-        if candidates.count < 14 && !ignoreLastWeekRule {
+        // Solo las recetas del espacio activo
+        let candidates = spaceRecipes.filter { !excluded.contains($0.id) }
+        let candidates.count < 14 && !ignoreLastWeekRule {
             showNotEnoughAlert = true
             return
         }
         
-        // Solo las recetas fijas del espacio activo
         let spaceFixed = fixedAssignments.filter { $0.space == currentSpace }
         
         let result = MenuGenerator.generateWeekMenu(
-            recipes: allRecipes,
+            recipes: spaceRecipes,
             forWeekOf: selectedDate,
             season: selectedSeason,
             excludedRecipeIDs: excluded,
@@ -342,7 +345,7 @@ struct WeeklyPlanView: View {
         case .success(let newMenu):
             deleteCurrentWeek()
             for dayPlan in newMenu {
-                dayPlan.space = currentSpace // Marcar el menú con el espacio activo
+                dayPlan.space = currentSpace
                 context.insert(dayPlan)
             }
         case .failure(.notEnoughForAvailability):
