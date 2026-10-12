@@ -35,12 +35,14 @@ struct RecipeDetailView: View {
                     
                     HStack(spacing: 4) {
                         if recipe.category.isCustomIcon {
-                            Image(recipe.category.icon)           // asset propio
+                            Image(recipe.category.icon) // asset propio
+                                .renderingMode(.template)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 14, height: 14)
+                                .foregroundStyle(.primary)
                         } else {
-                            Image(systemName: recipe.category.icon)  // SF Symbol
+                            Image(systemName: recipe.category.icon) // SF Symbol
                         }
                         Text(recipe.category.rawValue)
                     }

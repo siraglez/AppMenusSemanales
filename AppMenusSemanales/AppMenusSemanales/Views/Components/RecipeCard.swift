@@ -44,9 +44,11 @@ struct CategoryLabel: View {
         HStack(spacing: 4) {
             if category.isCustomIcon {
                 Image(category.icon)  // Asset propio
+                    .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 14, height: 14)
+                    .foregroundStyle(.primary)
             } else {
                 Image(systemName: category.icon)  // SF Symbol
             }
