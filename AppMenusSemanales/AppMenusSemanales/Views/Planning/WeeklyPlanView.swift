@@ -30,7 +30,7 @@ struct WeeklyPlanView: View {
     @State private var showNotEnoughAlert = false
     @State private var showAvailabilityAlert = false
     
-    let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domino"]
+    let daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
     // MARK: Comensales y preferencias
     var atHomeMembers: [FamilyMember] { familyMembers.filter { $0.isAtHome } }
@@ -52,10 +52,10 @@ struct WeeklyPlanView: View {
         return list
     }
     
-    // Alergias combinadas de todos los comensales
     // Recetas del espacio activo (el recetario está separado por espacio)
     var spaceRecipes: [Recipe] { allRecipes.filter { $0.space == currentSpace } }
     
+    // Alergias combinadas de todos los comensales
     var combinedAllergies: [String] {
         var set = Set<String>()
         for eater in eaters { set.formUnion(eater.prefs.allergies) }
@@ -177,7 +177,7 @@ struct WeeklyPlanView: View {
                             recipeRow(recipe:lunch, mealLabel: "Comida", icon: "sun.max.fill", iconColor: .orange)
                         }
                     } else {
-                        emptySlotRow(mealLabel: "Comida", icon: "sun.max,fill", iconColor: .orange)
+                        emptySlotRow(mealLabel: "Comida", icon: "sun.max.fill", iconColor: .orange)
                     }
                     if let dinner = dailyPlan.dinner {
                         NavigationLink(destination: RecipeDetailView(recipe: dinner)) {
@@ -325,7 +325,7 @@ struct WeeklyPlanView: View {
         
         // Solo las recetas del espacio activo
         let candidates = spaceRecipes.filter { !excluded.contains($0.id) }
-        let candidates.count < 14 && !ignoreLastWeekRule {
+        if candidates.count < 14 && !ignoreLastWeekRule {
             showNotEnoughAlert = true
             return
         }
