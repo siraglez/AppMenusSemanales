@@ -37,6 +37,7 @@ struct FamilyMembersEditorView: View {
                                 Image(systemName: "person.circle.fill")
                                     .font(.title2)
                                     .foregroundStyle(.blue)
+                                    .accessibilityHidden(true)
                                 VStack(alignment: .leading) {
                                     Text(member.name.isEmpty ? "Sin nombre" : member.name)
                                         .fontWeight(.medium)

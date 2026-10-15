@@ -99,6 +99,7 @@ struct WeeklyPlanView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel("Opciones del menú")
                 }
             }
             .alert("¿Crear nuevo menú?", isPresented: $showRegenerateAlert) {
@@ -154,6 +155,8 @@ struct WeeklyPlanView: View {
                     .font(.title2)
                     .foregroundStyle(.gray)
             }
+            .accessibilityLabel("Semana anterior")
+            
             Spacer()
             VStack {
                 Text(weekLabel).font(.headline)
@@ -165,6 +168,7 @@ struct WeeklyPlanView: View {
                     .font(.title2)
                     .foregroundStyle(.blue)
             }
+            .accessibilityLabel("Semana siguiente")
         }
     }
     
@@ -209,6 +213,7 @@ struct WeeklyPlanView: View {
                 .font(.title3)
                 .frame(width: 30)
                 .padding(.top, 2)
+                .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(mealLabel)
@@ -236,6 +241,7 @@ struct WeeklyPlanView: View {
                 .font(.title3)
                 .frame(width: 30)
                 .padding(.top, 2)
+                .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(mealLabel)

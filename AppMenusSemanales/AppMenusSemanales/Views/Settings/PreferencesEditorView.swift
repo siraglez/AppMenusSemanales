@@ -62,6 +62,7 @@ struct PreferencesEditorView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(newAllergyText.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Añadir alergia")
                     }
                     
                     ForEach(prefs.allergies, id: \.self) { allergen in
@@ -115,6 +116,7 @@ struct PreferencesEditorView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(newIntoleranceText.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Añadir intolerancia")
                     }
                     
                     ForEach(prefs.intolerances, id: \.self) { intolerance in
@@ -150,6 +152,7 @@ struct PreferencesEditorView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(newDislikeText.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Añadir alimento")
                     }
                     
                     ForEach(prefs.dislikes, id: \.self) { dislike in

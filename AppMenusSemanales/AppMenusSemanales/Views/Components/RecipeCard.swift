@@ -49,8 +49,10 @@ struct CategoryLabel: View {
                     .scaledToFit()
                     .frame(width: 14, height: 14)
                     .foregroundStyle(.primary)
+                    .accessibilityHidden(true)
             } else {
                 Image(systemName: category.icon)  // SF Symbol
+                    .accessibilityHidden(true)
             }
             Text(category.rawValue)
         }

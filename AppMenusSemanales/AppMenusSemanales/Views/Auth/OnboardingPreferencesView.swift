@@ -22,6 +22,7 @@ struct OnboardingPreferencesView: View {
                     Image(systemName: "heart.text.square.fill")
                         .font(.system(size: 64))
                         .foregroundStyle(.green)
+                        .accessibilityHidden(true)
                     
                     Text("¿Tienes alguna alergia o preferencia?")
                         .font(.title2).bold()

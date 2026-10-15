@@ -97,6 +97,7 @@ struct AddRecipeView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(newIngName.isEmpty || newIngQuantity.isEmpty)
+                        .accessibilityLabel("Añadir ingrediente")
                     }
                     
                     List {

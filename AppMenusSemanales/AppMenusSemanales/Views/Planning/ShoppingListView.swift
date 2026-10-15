@@ -102,10 +102,11 @@ struct ShoppingListView: View {
                 Section {
                     HStack {
                         Button { moveWeek(by: -1) } label: {
-                            Image(systemName: "chevron.left.circe.fill").font(.title3)
+                            Image(systemName: "chevron.left.circle.fill").font(.title3)
                         }
                         .buttonStyle(.borderless)
                         .foregroundStyle(.gray)
+                        .accessibilityLabel("Semana anterior")
                         
                         Spacer()
                         VStack {
@@ -119,6 +120,7 @@ struct ShoppingListView: View {
                         }
                         .buttonStyle(.borderless)
                         .foregroundStyle(.blue)
+                        .accessibilityLabel("Semana siguiente")
                     }
                 }
                 
@@ -184,6 +186,7 @@ struct ShoppingListView: View {
                     Button(action: { showAddSheet = true}) {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Añadir producto")
                 }
             }
             .sheet(isPresented: $showAddSheet) {

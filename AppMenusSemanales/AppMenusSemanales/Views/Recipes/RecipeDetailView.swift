@@ -41,8 +41,10 @@ struct RecipeDetailView: View {
                                 .scaledToFit()
                                 .frame(width: 14, height: 14)
                                 .foregroundStyle(.primary)
+                                .accessibilityHidden(true)
                         } else {
                             Image(systemName: recipe.category.icon) // SF Symbol
+                                .accessibilityHidden(true)
                         }
                         Text(recipe.category.rawValue)
                     }
@@ -148,5 +150,7 @@ struct NutrientBadge: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(Int(value)) \(unit)")
     }
 }

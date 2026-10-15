@@ -56,6 +56,7 @@ struct ProfileView: View {
                 NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gear")
                 }
+                .accessibilityLabel("Ajustes")
             }
         }
     }
