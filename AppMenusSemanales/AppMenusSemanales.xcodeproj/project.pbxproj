@@ -29,6 +29,16 @@
 		4F45B3D72F3F7CFD004D084A /* AppMenusSemanalesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppMenusSemanalesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4FA1863C30821292004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4F45B3BD2F3F7CFA004D084A /* AppMenusSemanales */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4F45B3D02F3F7CFD004D084A /* AppMenusSemanalesTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -42,6 +52,9 @@
 		};
 		4F4AD4F92F3F8514005A1DEE /* AppMenusSemanales */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4FA1863C30821292004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */,
+			);
 			path = AppMenusSemanales;
 			sourceTree = "<group>";
 		};
@@ -400,11 +413,11 @@
 				DEVELOPMENT_TEAM = 592S3MQ3SW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppMenusSemanales/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Para iniciar sesión de forma segura sin escribir tu contraseña";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -434,11 +447,11 @@
 				DEVELOPMENT_TEAM = 592S3MQ3SW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppMenusSemanales/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Para iniciar sesión de forma segura sin escribir tu contraseña";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
