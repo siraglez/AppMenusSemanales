@@ -414,8 +414,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AppMenusSemanales/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = EasyBite;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Para iniciar sesión de forma segura sin escribir tu contraseña";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Usamos Face ID para desbloquear la aplicación y proteger tus menús.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -448,8 +449,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AppMenusSemanales/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = EasyBite;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Para iniciar sesión de forma segura sin escribir tu contraseña";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Usamos Face ID para desbloquear la aplicación y proteger tus menús.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

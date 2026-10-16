@@ -126,7 +126,7 @@ struct SettingsView: View {
         .alert("Biometría no disponible", isPresented: $showBiometricUnavailableAlert) {
             Button("Entendido", role: .cancel) { }
         } message: {
-            Text("Confugura Face ID o Touch ID (o un código) en los Ajustes de tu dispositivo para poder usar esta opción.")
+            Text("Configura Face ID o Touch ID (o un código) en los Ajustes de tu dispositivo para poder usar esta opción.")
         }
     }
     
