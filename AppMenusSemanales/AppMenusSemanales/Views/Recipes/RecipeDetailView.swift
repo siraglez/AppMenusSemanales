@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct RecipeDetailView: View {
     @Bindable var recipe: Recipe // Bindable permite detectar cambios si editamos
@@ -21,6 +22,17 @@ struct RecipeDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Foto del plato (solo si la receta tiene una)
+                if let data = recipe.photoData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .clipped()
+                        .cornerRadius(12)
+                        .accessibilityLabel("Foto de \(recipe.name)")
+                }
                 // Etiquetas
                 HStack {
                     Label(recipe.mealType.rawValue, systemImage: "fork.knife")

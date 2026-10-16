@@ -9,6 +9,7 @@
 import SwiftUI
 import SwiftData
 import Translation
+import PhotosUI
 
 struct AddRecipeView: View {
     @Environment(\.dismiss) var dismiss
@@ -23,6 +24,10 @@ struct AddRecipeView: View {
     @State private var selectedMealType: MealType = .lunch
     @State private var selectedAvailability: WeekAvailability = .any
     @State private var baseServings: Int = 2
+    
+    // Foto del plato (opcional)
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var photoData: Data?
     
     @State private var isCalculatingNutrition = false
     @State private var translationConfig: TranslationSession.Configuration?
@@ -120,6 +125,33 @@ struct AddRecipeView: View {
                     TextField("Pasos a seguir...", text: $instructions, axis: .vertical)
                         .lineLimit(4...10)
                 }
+                
+                // SECCIÓN 4: FOTO (opcional)
+                Section("Foto del plato (opcional)") {
+                    if let photoData, let uiImage = UIImage(data: photoData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .clipped()
+                            .cornerRadius(8)
+                            .accessibilityLabel("Foto del plato")
+                    }
+                    
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Label(photoData == nil ? "Añadir foto" : "Cambiar foto", systemImage: "photo")
+                    }
+                    
+                    if photoData != nil {
+                        Button(role: .destructive) {
+                            photoData = nil
+                            selectedPhotoItem = nil
+                        } label: {
+                            Label("Quitar foto", systemImage: "trash")
+                        }
+                    }
+                }
             }
             .navigationTitle(recipeToEdit == nil ? "Nueva Receta" : "Editar Receta")
             .toolbar {
@@ -149,6 +181,14 @@ struct AddRecipeView: View {
                     selectedAvailability = recipe.weekAvailability
                     baseServings = recipe.baseServings
                     tempIngredients = recipe.ingredients
+                    photoData = recipe.photoData
+                }
+            }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        photoData = prepareImageData(data)
+                    }
                 }
             }
             .translationTask(translationConfig) { session in
@@ -179,6 +219,23 @@ struct AddRecipeView: View {
         tempIngredients.append(newIngredient)
         newIngName = ""
         newIngQuantity = ""
+    }
+    
+    // Reduce el tamaño de la foto antes de guardarla (máx 1024 px, JPEG comprimido)
+    func prepareImageData(_ data: Data) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let maxSide: CGFloat = 1024
+        let size = image.size
+        let scale = min(1, maxSide / max(size.width, size.height))
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        return resized.jpegData(compressionQuality: 0.8)
     }
     
     func save(session: TranslationSession? = nil) async {
@@ -212,6 +269,7 @@ struct AddRecipeView: View {
             recipe.carbs = nutrition?.carbs
             recipe.fats = nutrition?.fats
             recipe.category = pendingCategory
+            recipe.photoData = photoData
         } else {
             let newRecipe = Recipe(
                 name: name,
@@ -228,6 +286,7 @@ struct AddRecipeView: View {
             newRecipe.fats = nutrition?.fats
             newRecipe.category = pendingCategory
             newRecipe.space = newRecipeSpace
+            newRecipe.photoData = photoData
             context.insert(newRecipe)
         }
         dismiss()

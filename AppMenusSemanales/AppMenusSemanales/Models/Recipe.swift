@@ -36,6 +36,9 @@ class Recipe {
     var carbs: Double?
     var fats: Double?
     
+    // Foto del plato (opcional)
+    @Attribute(.externalStorage) var photoData: Data?
+    
     // Relaciones inversas necesarias para Cloudkit
     // No se usan directamente en el código, solo existen para que las relaciones de Weeklyenu y FixedAssignment tengan su "vuelta"
     var menusAsLunch: [WeeklyMenu] = []
