@@ -55,6 +55,9 @@
 			exceptions = (
 				4FA1863D308212E5004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */,
 			);
+			explicitFileTypes = {
+				Info.plist = sourcecode.swift;
+			};
 			path = AppMenusSemanales;
 			sourceTree = "<group>";
 		};
