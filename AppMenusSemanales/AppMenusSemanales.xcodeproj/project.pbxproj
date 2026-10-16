@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4FA1863C30821292004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */ = {
+		4FA1863D308212E5004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -53,7 +53,7 @@
 		4F4AD4F92F3F8514005A1DEE /* AppMenusSemanales */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FA1863C30821292004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */,
+				4FA1863D308212E5004DC2C1 /* Exceptions for "AppMenusSemanales" folder in "AppMenusSemanales" target */,
 			);
 			path = AppMenusSemanales;
 			sourceTree = "<group>";
