@@ -18,19 +18,12 @@ import SwiftData
 
 @main
 struct AppMenusSemanalesApp: App {
-    @AppStorage("didCompleteOnboarding") var didCompleteOnboarding: Bool = false
     @AppStorage("appAppearance") var appAppearanceRaw: String = AppAppearance.system.rawValue
     
     var body: some Scene {
         WindowGroup {
-            Group {
-                if didCompleteOnboarding {
-                    ContentView()
-                } else {
-                    OnboardingPreferencesView()
-                }
-            }
-            .preferredColorScheme(AppAppearance(rawValue: appAppearanceRaw)?.colorScheme)
+            RootContentView()
+                .preferredColorScheme(AppAppearance(rawValue: appAppearanceRaw)?.colorScheme)
         }
         .modelContainer(for: [
             Recipe.self,

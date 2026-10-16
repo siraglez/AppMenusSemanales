@@ -35,10 +35,12 @@ struct SettingsView: View {
     
     // Ajustes guardados en el dispositivo
     @AppStorage("appAppearance") var appAppearanceRaw: String = AppAppearance.system.rawValue
+    @AppStorage("appLockEnabled") var appLockEnabled: Bool = false
     
     // Estados para las alertas de confirmación
     @State private var showDeleteMenusAlert = false
     @State private var showClearListAlert = false
+    @State private var showBiometricUnavailableAlert = false
     
     var body: some View {
         Form {
@@ -49,6 +51,24 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+            }
+            
+            // ── Seguridad ──
+            Section {
+                Toggle(isOn: $appLockEnabled) {
+                    Label("Bloquear con \(BiometricHelper.biometricTypeName())", systemImage: "faceid")
+                }
+                .onChange(of: appLockEnabled) { _, newValue in
+                    // Si se intenta activar sin biometría cofigurada, lo revertimos y avisamos
+                    if newValue && !BiometricHelper.isBiometricAvailable() {
+                        appLockEnabled = false
+                        showBiometricUnavailableAlert = true
+                    }
+                }
+            } header: {
+                Text("Seguridad")
+            } footer: {
+                Text("Si lo activas, se pedirá \(BiometricHelper.biometricTypeName()) cada vez que abras la app. Tus datos siguen guardándose solo en este dispositivo.")
             }
             
             // ── Gestión de datos ──
@@ -101,6 +121,12 @@ struct SettingsView: View {
             Button("Vaciar", role: .destructive) { clearShoppingList() }
         } message: {
             Text("Se eliminarán  los productos añadidos manualmente y se desmarcarán todos los elementos")
+        }
+        // Aviso: Biometría no disponible
+        .alert("Biometría no disponible", isPresented: $showBiometricUnavailableAlert) {
+            Button("Entendido", role: .cancel) { }
+        } message: {
+            Text("Confugura Face ID o Touch ID (o un código) en los Ajustes de tu dispositivo para poder usar esta opción.")
         }
     }
     
