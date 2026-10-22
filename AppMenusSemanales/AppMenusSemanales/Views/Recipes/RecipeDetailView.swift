@@ -108,7 +108,7 @@ struct RecipeDetailView: View {
                 
                 Text("Ingredientes")
                     .font(.headline)
-                ForEach(recipe.ingredients) { ingredient in
+                ForEach(recipe.ingredients ?? []) { ingredient in
                     HStack {
                         Text("• " + ingredient.name)
                         Spacer()
@@ -116,7 +116,7 @@ struct RecipeDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                if recipe.ingredients.isEmpty {
+                if (recipe.ingredients ?? []).isEmpty {
                     Text("Sin ingredientes registrados").foregroundStyle(.secondary)
                 }
 

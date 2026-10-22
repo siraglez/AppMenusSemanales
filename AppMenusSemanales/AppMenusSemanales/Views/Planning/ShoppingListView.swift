@@ -48,14 +48,14 @@ struct ShoppingListView: View {
         for menu in menus {
             if let lunch = menu.lunch {
                 let factor = servingsFactor(for: lunch)
-                for ing in lunch.ingredients {
+                for ing in lunch.ingredients ?? [] {
                     addIngredient(to: &totals, name: ing.name,
                                   qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }
             }
             if let dinner = menu.dinner {
                 let factor = servingsFactor(for:dinner)
-                for ing in dinner.ingredients {
+                for ing in dinner.ingredients ?? [] {
                     addIngredient(to: &totals, name: ing.name,
                                   qty: ing.quantity * factor, unit: ing.unit, isManual: false)
                 }

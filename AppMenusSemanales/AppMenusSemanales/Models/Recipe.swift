@@ -17,7 +17,7 @@ class Recipe {
     var instructions: String = ""
     
     @Relationship(deleteRule: .cascade, inverse: \Ingredient.recipe)
-    var ingredients: [Ingredient] = []
+    var ingredients: [Ingredient]? = []
     
     var mealTypeRaw: String = MealType.lunch.rawValue
     var seasonRaw: String = Season.all.rawValue
@@ -41,9 +41,9 @@ class Recipe {
     
     // Relaciones inversas necesarias para Cloudkit
     // No se usan directamente en el código, solo existen para que las relaciones de Weeklyenu y FixedAssignment tengan su "vuelta"
-    var menusAsLunch: [WeeklyMenu] = []
-    var menusAsDinner: [WeeklyMenu] = []
-    var fixedAssignments: [FixedAssignment] = []
+    var menusAsLunch: [WeeklyMenu]? = []
+    var menusAsDinner: [WeeklyMenu]? = []
+    var fixedAssignments: [FixedAssignment]? = []
     
     // Convertir los String guardados a los Enums para usarlos fácil en código
     var mealType: MealType {

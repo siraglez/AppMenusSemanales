@@ -88,7 +88,7 @@ struct MemberWarning: Identifiable {
 func preferenceWarnings(for recipe: Recipe, preferences: UserPreferences?) -> [PreferenceWarning] {
     guard let prefs = preferences else { return [] }
     
-    let ingredientNames = recipe.ingredients.map { $0.name.lowercased() }
+    let ingredientNames = (recipe.ingredients ?? []).map { $0.name.lowercased() }
     var result: [PreferenceWarning] = []
     
     // 1. ALERGIAS

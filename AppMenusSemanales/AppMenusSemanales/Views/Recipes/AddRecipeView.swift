@@ -180,7 +180,7 @@ struct AddRecipeView: View {
                     selectedSeason = recipe.season
                     selectedAvailability = recipe.weekAvailability
                     baseServings = recipe.baseServings
-                    tempIngredients = recipe.ingredients
+                    tempIngredients = recipe.ingredients ?? []
                     photoData = recipe.photoData
                 }
             }

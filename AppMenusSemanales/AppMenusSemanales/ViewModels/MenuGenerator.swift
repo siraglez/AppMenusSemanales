@@ -151,7 +151,7 @@ class MenuGenerator {
     // Comprueba si una receta contiene algún alérgeno del usuario,
     // usando el diccionario intoleranceIngredients para cubrir ingredientes relacionados.
     private static func recipeContainsAllergen(_ recipe: Recipe, allergies: [String]) -> Bool {
-        let ingredientNames = recipe.ingredients.map { $0.name.lowercased() }
+        let ingredientNames = (recipe.ingredients ?? []).map { $0.name.lowercased() }
         
         return allergies.contains { allergen in
             let key = allergen.lowercased()
