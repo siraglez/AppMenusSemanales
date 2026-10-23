@@ -36,6 +36,8 @@ struct SettingsView: View {
     // Ajustes guardados en el dispositivo
     @AppStorage("appAppearance") var appAppearanceRaw: String = AppAppearance.system.rawValue
     @AppStorage("appLockEnabled") var appLockEnabled: Bool = false
+    @AppStorage("currentSpace") var currentSpaceRaw: String = MenuSpace.familiar.rawValue
+    var currentSpaceName: String { (MenuSpace(rawValue: currentSpaceRaw) ?? .familiar).rawValue.lowercased() }
     
     // Estados para las alertas de confirmación
     @State private var showDeleteMenusAlert = false
@@ -68,7 +70,7 @@ struct SettingsView: View {
             } header: {
                 Text("Seguridad")
             } footer: {
-                Text("Si lo activas, se pedirá \(BiometricHelper.biometricTypeName()) cada vez que abras la app. Tus datos siguen guardándose solo en este dispositivo.")
+                Text("Si lo activas, se pedirá \(BiometricHelper.biometricTypeName()) cada vez que abras la app.")
             }
             
             // ── Gestión de datos ──
@@ -86,7 +88,7 @@ struct SettingsView: View {
             } header: {
                 Text("Gestión de datos")
             } footer: {
-                Text("Estas acciones no borran tus recetas, solo los menús generados o los productos de la lista.")
+                Text("Estas acciones solo afectan al espacio \(currentSpaceName) y no borran recetas, solo los menús generados o los productos de la lista.")
             }
             
             // ── Acerca de ──
@@ -113,14 +115,14 @@ struct SettingsView: View {
             Button("Cancelar", role: .cancel) { }
             Button("Borrar", role: .destructive) { deleteAllMenus() }
         } message: {
-            Text("Se eliminarán todos los menús generados de todas las semanas. Tus recetas no se borrarán.")
+            Text("Se eliminarán todos los menús del espacio \(currentSpaceName) de todas las semanas. Las recetas no se borrarán.")
         }
         // Confirmación: vaciar lista
         .alert("¿Vaciar la lista de la compra?", isPresented: $showClearListAlert) {
             Button("Cancelar", role: .cancel) { }
             Button("Vaciar", role: .destructive) { clearShoppingList() }
         } message: {
-            Text("Se eliminarán  los productos añadidos manualmente y se desmarcarán todos los elementos")
+            Text("Se eliminarán  los productos añadidos manualmente del espacio \(currentSpaceName) y se desmarcarán todos los elementos.")
         }
         // Aviso: Biometría no disponible
         .alert("Biometría no disponible", isPresented: $showBiometricUnavailableAlert) {

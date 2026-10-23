@@ -18,6 +18,7 @@ struct WeeklyPlanView: View {
     @Query var fixedAssignments: [FixedAssignment]
     @Query var familyMembers: [FamilyMember]
     @AppStorage("myName") var myName: String = ""
+    @Environment(DataStores.self) private var stores
     
     @AppStorage("currentSpace") var currentSpaceRaw: String = MenuSpace.familiar.rawValue
     var currentSpace: MenuSpace { MenuSpace(rawValue: currentSpaceRaw) ?? .familiar }
@@ -39,7 +40,7 @@ struct WeeklyPlanView: View {
     var eaters: [(name: String, prefs: UserPreferences)] {
         var list: [(String, UserPreferences)] = []
         
-        if let global = userPreferences.first(where: { $0.member == nil }) {
+        if let global = stores.myPreferences() {
             list.append((myName.isEmpty ? "Tú" : myName, global))
         }
         if currentSpace == .familiar {

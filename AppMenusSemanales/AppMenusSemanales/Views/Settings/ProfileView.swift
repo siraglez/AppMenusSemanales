@@ -5,12 +5,16 @@
 //  Created by Sira Gonzalez-Madroño
 //
 // Pantalla de perfil: nombre, preferencias, recetas fijas y grupo familiar.
-// La app no tiene cuentas: los datos son locales
+// Los datos personales se sincronizan con iCloud; los familiares se comparten con la familia
 
 import SwiftUI
+import SwiftData
 
 struct ProfileView: View {
     @AppStorage("myName") var myName: String = ""
+    @Environment(DataStores.self) private var stores
+    @AppStorage("currentSpace") private var currentSpaceRaw: String = MenuSpace.familiar.rawValue
+    private var currentSpace: MenuSpace { MenuSpace(rawValue: currentSpaceRaw) ?? .familiar }
     
     var body: some View {
         NavigationStack {
@@ -39,6 +43,7 @@ struct ProfileView: View {
                     NavigationLink(destination: FixedRecipesEditorView()
                         .navigationTitle("Recetas Fijas")
                         .navigationBarTitleDisplayMode(.inline)
+                        .modelContainer(stores.container(for: currentSpace))
                     ) {
                         Label("Recetas fijas por día", systemImage: "pin")
                     }
@@ -46,14 +51,16 @@ struct ProfileView: View {
                 
                 // - Grupo familiar -
                 Section("Grupo Familiar") {
-                    NavigationLink(destination: FamilyMembersEditorView()) {
+                    NavigationLink(destination: FamilyMembersEditorView()
+                        .modelContainer(stores.familiar)) {
                         Label("Miembros de la familia", systemImage: "person.3")
                     }
                 }
             }
             .navigationTitle("Perfil")
             .toolbar {
-                NavigationLink(destination: SettingsView()) {
+                NavigationLink(destination: SettingsView()
+                    .modelContainer(stores.container(for: currentSpace))) {
                     Image(systemName: "gear")
                 }
                 .accessibilityLabel("Ajustes")
